@@ -1,0 +1,7 @@
+yfinance==1.4.1
+pandas==2.3.3
+numpy==2.3.3
+pytest==8.4.2
+rich==13.9.4
+anthropic==0.116.0
+lxml==6.1.2

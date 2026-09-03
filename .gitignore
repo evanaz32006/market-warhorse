@@ -1,0 +1,27 @@
+# --- Data: NEVER in git -------------------------------------------------------
+# market_data.db is 13+ GB and grows. Git is the wrong tool for it; it needs a
+# file-level backup instead (see BACKUP.md). Note the DB is NOT fully reproducible:
+# fetch_period is 2y, so price bars older than ~2 years can no longer be refetched.
+data/
+
+# --- Virtualenv / caches ------------------------------------------------------
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# --- Run logs and scratch -----------------------------------------------------
+*.log
+scratchpad_*
+output/run_*.log
+
+# --- Regenerable outputs ------------------------------------------------------
+# Rebuilt from the database on any run; large and noisy in diffs.
+output/score_history.csv
+output/latest_rankings.csv
+output/research/signal_decay.csv
+output/research/signal_decay_by_size.csv
+output/research/walk_forward_weights.csv
+output/research/short_horizon_signals.csv
+output/edgar_validation_report.csv
+output/operating_margin_audit.csv

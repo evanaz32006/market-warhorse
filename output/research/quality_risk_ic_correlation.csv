@@ -1,0 +1,5 @@
+model_version,horizon,n_days,pearson_ic_corr,spearman_ic_corr,risk_mean_ic,quality_mean_ic,interpretation,generated_at
+v0.4_edgar_pit_fundamentals,5,474,0.5321651737764004,0.5259308170874105,-0.020887262901003404,-0.01734825455452726,daily ICs move together -> consistent with ONE shared regime driver,2026-08-18T00:37:07.917842+00:00
+v0.4_edgar_pit_fundamentals,20,459,0.46342548689073115,0.46305197859157576,-0.028844864693739654,-0.028712614090324554,daily ICs move together -> consistent with ONE shared regime driver,2026-08-18T00:37:07.918464+00:00
+v0.4_edgar_pit_fundamentals,60,419,0.4489515687336316,0.4572813570050098,-0.025559998465435073,-0.041039055448316084,daily ICs move together -> consistent with ONE shared regime driver,2026-08-18T00:37:07.919003+00:00
+v0.4_edgar_pit_fundamentals,120,359,0.3704811846110423,0.22481494737606536,-0.0068688831865413935,-0.06575182667452827,daily ICs move together -> consistent with ONE shared regime driver,2026-08-18T00:37:07.919527+00:00
