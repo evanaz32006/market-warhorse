@@ -1,6 +1,86 @@
 # SESSION_STATE.md
 
-Last updated: 2026-08-21
+Last updated: 2026-09-09
+
+---
+
+## Conditional-pattern test harness — BUILT and first results in (2026-09-09)
+
+`src/patterns.py` + `tests/test_patterns.py` (18 tests). Opt-in via `python app.py --research
+patterns`. **Report only** — it reads `price_history` and NOTHING else, so it is unaffected by which
+`model_version` is live and does not need re-running when a version is promoted.
+
+**Why a harness rather than one feature per idea.** The owner has many "after X, does Y happen?"
+hypotheses. Hand-coding each is a day of work; as a query it is minutes. But making a test cheap
+makes a FALSE discovery cheap — 200 seasonal patterns at alpha=0.05 hands back ~10 "findings" that
+measured nothing. So the correction machinery is a first-class output, not advice in a docstring:
+
+- **per row** — `effective_independent_n` by GREEDY NON-OVERLAP SCAN, which is sharper than the
+  blanket `n_days / horizon` used elsewhere in this project and has to be: a Friday-only condition
+  at h=5 fires weekly and its windows barely overlap, so the blanket rule would discard 80% of a
+  real sample. Plus `min_detectable_effect_pct` at 80% power, which is what separates "no effect"
+  from "no effect large enough to see with 554 sessions".
+- **per family** — Bonferroni, Benjamini-Hochberg FDR, and a circular-shift null on the family's
+  max |t| (White's Reality Check in spirit). ONE SHARED offset per replication, deliberately:
+  independent shifts would destroy the correlation between patterns tested on the same tape and
+  produce a null that is too WIDE — conservative-looking but wrong.
+- **always** — a chronological out-of-sample split, reported per row (`sign_held_oos`).
+- **p-values use the Student-t tail, not the normal approximation.** At 7 df the 5% two-sided cutoff
+  is 2.36, not 1.96. Every sample in this project is small, which is exactly where the normal
+  approximation calls a t of 2.1 significant when it is not.
+
+### Three defects the harness found in its own first live run
+
+1. **A two-observation "SIGNAL".** "SPY down 5 sessions in a row" fired exactly TWICE in 554
+   sessions, both followed by a gain. A two-point standard deviation gave t = 185 and handed the
+   whole `streaks` family a p = 0.010 SIGNAL verdict built on two coin flips. Fix:
+   `pattern_min_effective_n` = 5 — below that a row is described but gets no t, no p, and **no vote
+   in the family correction** (it would otherwise also inflate Bonferroni's divisor and supply the
+   family's max |t|). With the floor applied, `streaks` went 0.010 -> 0.559.
+2. **A series measured against itself.** `sector_day_of_week` included SPY, whose excess return vs
+   SPY is identically zero — zero variance, no t, and the row silently landed in the "could not be
+   tested" bucket as though the data were thin rather than the comparison meaningless. Five such
+   rows. Fixed, and `_inference_note` now NAMES which of the two causes applies.
+3. **A too-wide null hiding behind small-n rows.** Because the untestable rows were originally in
+   the permutation family, the null's max |t| was inflated by their garbage t-values. Removing them
+   narrowed the null correctly — which moved `strong_week_reversal` the OTHER way, from 0.174 to
+   0.038. Worth recording: the fix made one family look worse and another look better, which is what
+   a real fix does rather than one tuned toward a desired answer.
+
+### The results (198 tests, 6 pre-declared families)
+
+**8 of 192 tested rows are nominally significant. 9.6 are expected by chance. ZERO survive
+Bonferroni or BH-FDR.** That is the textbook picture of no signal.
+
+- **"Historically weaker Fridays" is not in this data** — and the sign is backwards. Friday is the
+  *strongest* weekday for SPY: +0.19% mean vs a +0.07% baseline, 65.5% hit rate vs 56.8%. t = 1.42,
+  p = 0.16 — not significant either way. The weak day is Wednesday (t = -1.44). Family p = 0.499.
+- **Month-of-year and turn-of-month: nothing** (family p = 0.810), and all 12 month rows are
+  underpowered by construction — 554 sessions is TWO observations per calendar month.
+- **Regime (above/below SMA50/200): nothing** (family p = 0.986).
+- **`strong_week_reversal` family p = 0.038, and it should NOT be read as a finding.** The driver is
+  a single n=5 row (XLY strong week + Thursday -> Friday, 100% hit rate on five observations) sitting
+  exactly at the inference floor. The family's own null p95 is |t| = 5.0 — this family produces
+  |t| ~ 5 by chance routinely — and the observed 6.03 barely clears it. Nominally significant count
+  is 3 against 3.4 expected: exactly chance.
+
+### The one thing worth watching
+
+Inside that family, three RELATED tests point the same way with real sample sizes: after a
+top-decile week, **mid- and small-cap indices give it back**.
+
+| test | n / eff_n | lift | tradable | hit vs base | t | OOS sign |
+|---|---|---|---|---|---|---|
+| IJR top-decile own 5d week -> next 1d excess | 33 / 33 | -0.32% | -0.21% | 30% vs 46% | -2.60 | held |
+| IJR best-of-peers 5d week -> next 5d excess | 17 / 9 | -1.05% | -1.10% | 24% vs 45% | -2.60 | held |
+| IJH top-decile own 5d week -> next 1d excess | 30 / 30 | -0.19% | -0.16% | 30% vs 47% | -1.87 | held |
+
+Same sign, same direction as the owner's hypothesis, sign held out of sample in all three, and the
+effect survives the tradable (D+1 open) measurement rather than living only in the close-to-close
+version. It still does **not** pass the corrected bar, and one coherent cluster inside a family whose
+significant-row count is exactly chance-level is not evidence. **No weight change, no new feature.**
+The honest status is "re-measure when there is more calendar time", which is also the only thing
+that can settle it — adding names cannot.
 
 ---
 

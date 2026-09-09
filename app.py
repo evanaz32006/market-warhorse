@@ -555,7 +555,7 @@ def main():
                          help="v0.4 Phase 4: reconstruct point-in-time scores WITH EDGAR-derived "
                               "fundamentals under model_version=" + EDGAR_MODEL_VERSION)
     parser.add_argument("--research", choices=["decay", "walkforward", "quality", "shorthorizon", "backtest",
-                                  "sizedecay", "all"],
+                                  "sizedecay", "patterns", "all"],
                          help="run an opt-in RESEARCH analysis (report only — changes no score, "
                               "weight or model_version) and exit, never on the nightly path")
     parser.add_argument("--research-version", default=None,
@@ -592,6 +592,12 @@ def main():
         if args.research in ("backtest", "all"):
             from src import backtest
             backtest.run_portfolio_backtest(db_path=db_path, model_version=version)
+        if args.research in ("patterns", "all"):
+            # Deliberately takes no model_version: the pattern harness reads PRICE HISTORY only,
+            # never `feature_snapshots`, so it is unaffected by which model is live and its
+            # results do not need re-running when a version is promoted.
+            from src import patterns
+            patterns.run_pattern_research(db_path=db_path)
         return
 
     watchlist = pd.read_csv(WATCHLIST_PATH)

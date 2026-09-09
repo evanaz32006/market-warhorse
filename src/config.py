@@ -162,6 +162,35 @@ PARAMS = {
     "backtest_suspicious_return_pct": 50.0,
     "backtest_risk_free_rate": 0.0,          # Sharpe vs zero; stated rather than assumed
 
+    # --- Conditional-pattern test harness (research only, `--research patterns`) ----------------
+    # Answers "after condition X, does outcome Y happen?" as a QUERY rather than a build, so a
+    # hypothesis costs minutes instead of a day. Everything here is about not fooling ourselves:
+    # seasonality is the most data-mined corner of finance and a harness that makes testing cheap
+    # ALSO makes false discovery cheap. The multiple-comparisons machinery below is not optional
+    # decoration — it is the reason this harness is allowed to exist.
+    "pattern_min_history": 60,             # sessions of expanding history before a percentile condition may fire
+    "pattern_min_triggers": 20,            # below this many trigger days, report the row but never call it a finding
+    # HARD FLOOR for inference, and the harness caught its own need for it on the very first real
+    # run: "SPY down 5 days in a row" fired exactly TWICE in 554 sessions, both times followed by a
+    # gain, which produces a two-point standard deviation, a t-statistic of 185, and a family-level
+    # "SIGNAL" verdict built on two coin flips. Below this many INDEPENDENT observations a row is
+    # still reported descriptively but gets no t, no p, and no vote in the family correction —
+    # a std estimated from a handful of points is arithmetic, not evidence.
+    "pattern_min_effective_n": 5,
+    "pattern_horizons": [1, 5, 10, 20],    # forward sessions measured after each trigger
+    "pattern_alpha": 0.05,                 # per-test two-sided significance, BEFORE any correction
+    "pattern_fdr_q": 0.10,                 # Benjamini-Hochberg false-discovery rate for the family
+    # White's-Reality-Check-style family null: circularly shift the WHOLE condition system against
+    # the outcomes and record the family's max |t|. One shared offset per replication, deliberately —
+    # independent shifts would destroy the correlation between patterns and inflate the null.
+    "pattern_permutations": 500,
+    "pattern_perm_seed": 20260909,         # fixed so a reported p-value is reproducible to the digit
+    # z(0.975) + z(0.80) = 1.96 + 0.84. Multiplies std/sqrt(effective_n) to give the smallest effect
+    # this sample could detect at 80% power — the column that turns "no signal" into "no signal
+    # DETECTABLE with this much data", which with 554 sessions is usually the honest reading.
+    "pattern_power_z": 2.80,
+    "pattern_oos_split": 0.6,              # chronological; first 60% in-sample, last 40% held out
+
     # --- Shared research plumbing ---------------------------------------------------------------
     "calendar_ticker": "SPY",              # the ONE master session calendar (was a literal in journal.py)
     "research_output_dir": "output/research",
