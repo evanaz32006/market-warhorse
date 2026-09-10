@@ -279,6 +279,32 @@ def init_db(db_path=DEFAULT_DB_PATH):
                 PRIMARY KEY (accession, trans_sk, table_kind)
             )
         """)
+        # SEC filing index: 8-K material events plus 10-K/10-Q dates, one row per filing.
+        #
+        # `acceptance_datetime` is stored VERBATIM and the trading-calendar roll is computed at read
+        # time (`filings.effective_date`). Storing a derived "effective date" instead would leave
+        # stale values behind the first time the calendar is corrected — and a gate that is a day
+        # wrong is invisible in every output.
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS sec_filings (
+                accession TEXT NOT NULL,
+                cik TEXT NOT NULL,
+                ticker TEXT,
+                form TEXT NOT NULL,
+                filed_date TEXT NOT NULL,
+                acceptance_datetime TEXT,
+                report_date TEXT,
+                items TEXT,
+                primary_doc TEXT,
+                ingested_at TEXT NOT NULL,
+                PRIMARY KEY (accession, cik)
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_sec_filings_ticker_filed "
+                     "ON sec_filings(ticker, filed_date)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_sec_filings_form "
+                     "ON sec_filings(form, filed_date)")
+
         conn.execute("CREATE INDEX IF NOT EXISTS idx_insider_ticker_filed "
                      "ON insider_transactions(ticker, filed_date)")
         conn.execute("CREATE INDEX IF NOT EXISTS idx_insider_filed "
@@ -914,5 +940,104 @@ def insider_coverage(db_path=DEFAULT_DB_PATH):
             "FROM insider_transactions").fetchone()
         return {"first_filed_date": row[0], "last_filed_date": row[1],
                 "n_rows": row[2], "n_tickers": row[3]}
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# SEC filing index (8-K / 10-K / 10-Q)
+# ---------------------------------------------------------------------------
+
+SEC_FILING_COLUMNS = ["accession", "cik", "ticker", "form", "filed_date",
+                      "acceptance_datetime", "report_date", "items", "primary_doc",
+                      "ingested_at"]
+
+
+def upsert_sec_filings(rows, db_path=DEFAULT_DB_PATH):
+    """Batch-write filing index rows. Idempotent on (accession, cik), so a company can be re-fetched
+    freely — which matters because this source is refreshed, not frozen."""
+    if not rows:
+        return 0
+    cols = SEC_FILING_COLUMNS
+    sql = (f"INSERT OR REPLACE INTO sec_filings ({', '.join(cols)}) "
+           f"VALUES ({', '.join('?' for _ in cols)})")
+    conn = _connect(db_path)
+    try:
+        conn.executemany(sql, [tuple(r.get(c) for c in cols) for r in rows])
+        conn.commit()
+    finally:
+        conn.close()
+    return len(rows)
+
+
+def load_sec_filings(ticker=None, forms=None, filed_on_or_before=None, filed_on_or_after=None,
+                     db_path=DEFAULT_DB_PATH):
+    """Filing rows, optionally gated by form and filing date.
+
+    NOTE: `filed_on_or_before` gates on the FILING date, which is necessary but not sufficient for
+    point-in-time correctness — a filing accepted after the close is stamped with that day's date
+    yet was not actionable until the next session. `filings.effective_date` applies that roll, and
+    every feature goes through it."""
+    where, params = [], []
+    if ticker:
+        where.append("ticker = ?")
+        params.append(ticker)
+    if forms:
+        where.append("form IN (%s)" % ", ".join("?" for _ in forms))
+        params.extend(list(forms))
+    if filed_on_or_before:
+        where.append("filed_date <= ?")
+        params.append(filed_on_or_before)
+    if filed_on_or_after:
+        where.append("filed_date >= ?")
+        params.append(filed_on_or_after)
+    sql = "SELECT * FROM sec_filings"
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += " ORDER BY filed_date, accession"
+    conn = _connect(db_path)
+    try:
+        conn.row_factory = sqlite3.Row
+        return [dict(r) for r in conn.execute(sql, params).fetchall()]
+    finally:
+        conn.close()
+
+
+SEC_FILINGS_INGEST_MARKER = "sec_filings_ingested_through"
+
+
+def sec_filings_coverage(db_path=DEFAULT_DB_PATH):
+    """What the filing store actually holds, and how current it is.
+
+    `ingested_through` is written by a COMPLETED ingest and is the value features gate on. The
+    obvious alternative — MAX(filed_date) across the table — is a bad coverage signal here: with
+    1,500 companies somebody files every business day, so a run that fetched 3 companies and then
+    died would still look current. It is returned as `last_filed_date` for information, but it is
+    not what decides whether a date is knowable."""
+    conn = _connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT MIN(filed_date), MAX(filed_date), COUNT(*), COUNT(DISTINCT ticker) "
+            "FROM sec_filings").fetchone()
+        marker = conn.execute("SELECT value FROM meta WHERE key = ?",
+                              (SEC_FILINGS_INGEST_MARKER,)).fetchone()
+        return {"first_filed_date": row[0], "last_filed_date": row[1],
+                "n_rows": row[2], "n_tickers": row[3],
+                "ingested_through": marker[0] if marker else None}
+    finally:
+        conn.close()
+
+
+def live_snapshot_counts(model_version, db_path=DEFAULT_DB_PATH):
+    """[(run_date, n_tickers), ...] ascending, for LIVE rows only.
+
+    Backfilled rows are excluded deliberately: a backfill covers whatever the universe was on that
+    date and is not comparable to a live run's coverage."""
+    conn = _connect(db_path)
+    try:
+        return [(r[0], r[1]) for r in conn.execute(
+            "SELECT run_date, COUNT(*) FROM feature_snapshots "
+            "WHERE model_version = ? AND backfilled = 0 GROUP BY run_date ORDER BY run_date",
+            (model_version,))]
     finally:
         conn.close()

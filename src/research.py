@@ -1339,3 +1339,165 @@ def run_insider_research(db_path=storage.DEFAULT_DB_PATH, model_version=None, ou
     print("[research] insider IC: %d rows -> insider_ic.csv" % len(ic_df))
     print("[research] insider event study: %d rows -> insider_event_study.csv" % len(ev_df))
     return ic_df
+
+
+# ---------------------------------------------------------------------------
+# (g) SEC 8-K material events — REPORT ONLY
+# ---------------------------------------------------------------------------
+
+# PRE-REGISTERED READING, written before the numbers were seen.
+#
+#   8-K news is incorporated fast — the literature says most of the price reaction to a material
+#   disclosure lands within hours. This system runs on DAILY bars and gates events to the next
+#   session when they arrive after the close, so it is measuring what is left AFTER the immediate
+#   reaction. The honest expectation is therefore: little to nothing on a generic "an 8-K happened"
+#   flag, which pools a scheduled earnings release with a bankruptcy notice.
+#
+#   Two exceptions have documented persistence:
+#     * item 4.02 (previously issued financials can no longer be relied upon) and its siblings —
+#       expect NEGATIVE drift;
+#     * item 2.02 (results of operations) — post-earnings-announcement drift, expect POSITIVE.
+#       Note SUE-based PEAD was already tested on this universe and failed, so a positive result
+#       here would be surprising and should trigger a bug hunt rather than a celebration.
+#
+#   Unlike the Form 4 study, this one is measured where the sample HAS power: 5-20d horizons carry
+#   22-89 effective independent observations rather than 3.6.
+EVENT_HORIZONS = [1, 2, 5, 10, 20, 60]
+
+
+def _event_panel_frame(panel, index):
+    """(run_date, ticker, 8-K event features, forward excess returns) for every covered snapshot.
+
+    Rows past the end of ingested coverage are DROPPED, never zero-filled — an absence of filing
+    DATA is not an absence of news."""
+    from src.filings import EVENT_FEATURE_COLUMNS, event_features_as_of
+
+    max_h = max(EVENT_HORIZONS)
+    records, skipped = [], 0
+    for run_date, ticker, benchmark in zip(panel.frame["run_date"], panel.frame["ticker"],
+                                           panel.frame["benchmark"]):
+        feats = event_features_as_of(index, ticker, run_date)
+        if feats["coverage_missing"]:
+            skipped += 1
+            continue
+        fwd = forward_excess_vector(ticker, benchmark, run_date, panel, max_h)
+        rec = {"run_date": run_date, "ticker": ticker}
+        for c in EVENT_FEATURE_COLUMNS:
+            rec[c] = feats.get(c)
+        for h in EVENT_HORIZONS:
+            v = fwd[h - 1]
+            rec["excess_%dd" % h] = float(v) if not np.isnan(v) else None
+        records.append(rec)
+    print("[research] 8-K panel: %d rows, %d dropped as outside coverage (never zero-filled)"
+          % (len(records), skipped))
+    return pd.DataFrame(records)
+
+
+def _event_day_spread(matured, flag_col, excess_col, min_events=3):
+    """Day-level mean excess of names WITH the event minus names WITHOUT, then aggregated.
+
+    Per-day first, then across days — pooling every (name, date) row would weight a day with 60
+    events 60x a day with one, and would treat heavily overlapping forward windows as independent.
+    """
+    diffs, hits, n_events = [], [], 0
+    for _, sub in matured.groupby("run_date"):
+        has = sub[sub[flag_col] > 0]
+        without = sub[sub[flag_col] == 0]
+        if len(has) < min_events or len(without) < PARAMS["decay_min_names_per_day"]:
+            continue
+        diffs.append(float(has[excess_col].mean() - without[excess_col].mean()))
+        hits.append(float((has[excess_col] > 0).mean() * 100.0))
+        n_events += len(has)
+    return diffs, hits, n_events
+
+
+def run_event_research(db_path=storage.DEFAULT_DB_PATH, model_version=None, output_dir=None):
+    """Do 8-K material events predict forward excess return? REPORT ONLY.
+
+    Tests every (item group x trailing window x horizon) cell — 100+ comparisons — so the family is
+    corrected with Benjamini-Hochberg FDR borrowed from `patterns`. Without that, a family this size
+    hands back five "significant" cells by construction, and the temptation is to keep the one that
+    matches a story."""
+    from src import filings as filings_mod
+    from src.config import EVENT_8K_GROUPS, EVENT_8K_WINDOWS
+    from src.patterns import benjamini_hochberg
+
+    model_version = model_version or PARAMS["model_version"]
+    panel = load_panel(db_path, model_version)
+    if panel is None:
+        print("[research] no snapshots for %s" % model_version)
+        return pd.DataFrame()
+    index = filings_mod.build_event_index(db_path=db_path, calendar=panel.calendar)
+    if not index.by_ticker:
+        raise RuntimeError(
+            "filing store is empty — run the filing ingest first. Refusing to report 'no signal' "
+            "from an empty table, which is indistinguishable from a real null.")
+    print("[research] 8-K coverage %s .. %s (ingested_through), %d tickers with filings"
+          % (index.coverage_start, index.coverage_end, len(index.by_ticker)))
+
+    frame = _event_panel_frame(panel, index)
+    if frame.empty:
+        print("[research] no covered snapshots — nothing to measure")
+        return pd.DataFrame()
+
+    rows = []
+    for h in EVENT_HORIZONS:
+        excess_col = "excess_%dd" % h
+        matured = frame[frame[excess_col].notna()]
+        for group in sorted(EVENT_8K_GROUPS):
+            for w in EVENT_8K_WINDOWS:
+                flag_col = "%s_8k_%dd" % (group, w)
+                diffs, hits, n_events = _event_day_spread(matured, flag_col, excess_col)
+                stats = evaluation._aggregate_daily(pd.Series(diffs, dtype=float))
+                rows.append({
+                    "model_version": model_version, "event_group": group, "window_days": w,
+                    "horizon": h, "n_days": stats["n_days"], "n_event_name_days": n_events,
+                    "mean_excess_spread_pct": ((stats["mean"] * 100.0)
+                                               if stats["mean"] is not None else None),
+                    "median_excess_spread_pct": ((stats["median"] * 100.0)
+                                                 if stats["median"] is not None else None),
+                    "pct_of_days_positive": stats["pct_positive"],
+                    "hit_rate_pct": float(np.mean(hits)) if hits else None,
+                    "overlap_adjusted_t": evaluation._overlap_adjusted_t(
+                        stats["mean"], stats["std"], stats["n_days"], h),
+                    "effective_independent_n": (round(stats["n_days"] / float(h), 1)
+                                                if stats["n_days"] else 0),
+                    "min_detectable_spread_pct": (
+                        (_min_detectable(stats["std"], stats["n_days"], h) * 100.0)
+                        if _min_detectable(stats["std"], stats["n_days"], h) is not None else None),
+                    "survivorship_biased": True,
+                    "generated_at": _now_iso(),
+                })
+
+    # Family-level correction. 6 groups x 3 windows x 6 horizons = 108 cells on one tape; at
+    # alpha=0.05 roughly five come back "significant" having measured nothing. The corrected verdict
+    # is written onto every row so the uncorrected p cannot be quoted alone.
+    p_values = [_two_sided_p(r["overlap_adjusted_t"], r["effective_independent_n"]) for r in rows]
+    survivors = set(benjamini_hochberg(p_values, PARAMS["pattern_fdr_q"]))
+    n_tested = sum(1 for p in p_values if p is not None)
+    n_nominal = sum(1 for p in p_values if p is not None and p <= PARAMS["pattern_alpha"])
+    for i, r in enumerate(rows):
+        r["p_value"] = p_values[i]
+        r["family_size"] = n_tested
+        r["survives_bh_fdr"] = bool(i in survivors)
+        r["n_nominally_significant"] = n_nominal
+        r["expected_false_positives_at_alpha"] = round(n_tested * PARAMS["pattern_alpha"], 2)
+
+    df = pd.DataFrame(rows)
+    path = os.path.join(_output_dir(output_dir), "event_8k_study.csv")
+    df.to_csv(path, index=False)
+    print("[research] 8-K event study: %d cells (%d tested), %d nominally significant, "
+          "%.1f expected by chance, %d surviving BH-FDR -> %s"
+          % (len(df), n_tested, n_nominal, n_tested * PARAMS["pattern_alpha"],
+             int(df["survives_bh_fdr"].sum()), os.path.basename(path)))
+    return df
+
+
+def _two_sided_p(t, effective_n):
+    """Student-t two-sided p, borrowed from `patterns` so there is ONE definition of a p-value in
+    this project. Returns None below the inference floor — a t computed on a handful of
+    observations is arithmetic, not evidence."""
+    from src.patterns import _t_sf
+    if t is None or pd.isna(t) or not effective_n or effective_n < PARAMS["pattern_min_effective_n"]:
+        return None
+    return _t_sf(t, max(1.0, effective_n - 1))

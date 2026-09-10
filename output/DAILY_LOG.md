@@ -4,6 +4,151 @@ _Machine-appended after every run. Regenerated from the `journal` table; do not 
 
 ---
 
+## 2026-09-10 — v0.5_expanded_universe (live)
+
+_Run: scored 945 tickers in 1299.3s · fetch fresh=945 / cached=582 / failed=1 (CWEN-A)_
+_Warnings: 1 ticker(s) failed price fetch; 583 ticker(s) skipped (stale / no data)_
+
+### 1. Today's Rankings
+
+_Research ranking, NOT a buy recommendation._
+
+| # | Ticker | Sector | score_20d | Label | Earnings in |
+|---|--------|--------|-----------|-------|-------------|
+| 1 | PR | Energy | 81.1 | strong | 55d |
+| 2 | HCI | Financials | 80.3 | strong | 56d |
+| 3 | VLO | Energy | 80.2 | strong | 42d |
+| 4 | PSX | Energy | 80.1 | strong | 49d |
+| 5 | RNR | Financials | 79.9 | decent | 54d |
+| 6 | MPC | Energy | 79.1 | decent | 54d |
+| 7 | MATX | Industrials | 78.6 | decent | 55d |
+| 8 | LTC | Real Estate | 78.2 | decent | 54d |
+| 9 | INSW | Energy | 77.3 | decent | 56d |
+| 10 | VZ | Communication Services | 77.2 | decent | 40d |
+
+**vs prev live run (2026-09-09):** entered [HCI, INSW, LTC, MATX, MPC, PR, PSX, RNR, VLO, VZ] · exited [ACT, ADUS, APA, AVTR, CF, COP, CRBG, DE, DINO, EXPD]
+**Movers:** ↑ TRMK +18.4, RDDT +15.6, PM +15.2, HAS +13.5, HTH +11.7  ↓ SMH -30.6, ORCL -21.7, TER -20.4, LRCX -19.9, LEU -19.9
+
+### 2. Predictions that came due today
+
+**Live predictions** (v0.5_expanded_universe)
+
+- **2026-09-02 · v0.5_expanded_universe → 5d** (n=940): Strong n/a (n=4) vs Weak 43.9% (n=561)
+
+**Simulated — same model, backfilled over history**
+
+- **2026-03-19 · v0.5_expanded_universe → 120d** (n=314): Strong n/a (n=4) vs Weak 40.1% (n=167)
+- **2026-08-12 · v0.5_expanded_universe → 20d** (n=938): Strong n/a (n=11) vs Weak 49.6% (n=397)
+- **2026-06-15 · v0.5_expanded_universe → 60d** (n=314): Strong n/a (n=3) vs Weak 51.8% (n=137)
+
+_Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
+
+### 3. Running scoreboard — cumulative Strong vs Weak hit rate
+
+| Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
+|---------|-------------|-----------|-----------------|---------------|
+| 5d | 34.8% (n=23) | 47.7% (n=7249) | 48.6% (n=2211) | 49.8% (n=239781) |
+| 20d | n/a (n=0) | n/a (n=0) | 48.0% (n=6056) | 47.9% (n=221097) |
+| 60d | n/a (n=0) | n/a (n=0) | 48.5% (n=7056) | 44.9% (n=193291) |
+| 120d | n/a (n=0) | n/a (n=0) | 49.6% (n=6992) | 40.6% (n=147633) |
+
+_Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
+_Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
+
+### 4. Live validation tracker
+
+**4a. Fundamental-factor IC** — do value/quality earn their weight?
+
+_Live only — 15 live trading day(s) since 2026-08-20. The genuine out-of-sample read, and the one 4a exists for._
+  - value_component: 5d +0.109 (n=12981)
+  - quality_component: 5d -0.039 (n=12973)
+  - short_interest_component: 5d +0.052 (n=12883)
+
+_Full panel — includes backfilled rows. Large sample, but the weights were chosen on this data, so treat it as in-sample and flattering._
+  - value_component: 5d +0.012 (n=764696), 20d +0.023 (n=743700), 60d +0.041 (n=684902), 120d +0.063 (n=596443)
+  - quality_component: 5d -0.009 (n=770075), 20d -0.017 (n=749007), 60d -0.032 (n=689624), 120d -0.044 (n=600317)
+  - short_interest_component: 5d +0.052 (n=12883)
+
+**4b. Drift on established components** (recent-window IC vs full history)
+  - **DRIFT** momentum_component_20d@5d: -0.005 → -0.059 (recent n=14598)
+  - **DRIFT** long_momentum_component@5d: +0.000 → +0.052 (recent n=14580)
+  - **DRIFT** relative_strength_component_20d@5d: -0.004 → -0.065 (recent n=14598)
+
+---
+
+## 2026-09-09 — v0.5_expanded_universe (recovered)
+
+_Run: scored 1521 tickers in unknown time · fetch fresh=0 / cached=0 / failed=0_
+_Fundamentals: recovered — fundamentals stamped 2026-09-10 (not point-in-time)_
+_Warnings: recovered missed day; fundamentals as of 2026-09-10, excluded from factor IC_
+
+### 1. Today's Rankings
+
+_Research ranking, NOT a buy recommendation._
+
+| # | Ticker | Sector | score_20d | Label | Earnings in |
+|---|--------|--------|-----------|-------|-------------|
+| 1 | DINO | Energy | 86.4 | strong | — |
+| 2 | APA | Energy | 85.3 | strong | — |
+| 3 | AVTR | Health Care | 85.3 | strong | — |
+| 4 | COP | Energy | 85.1 | strong | — |
+| 5 | EXPD | Industrials | 85.0 | strong | — |
+| 6 | ACT | Financials | 84.7 | strong | — |
+| 7 | ADUS | Health Care | 84.2 | strong | — |
+| 8 | DE | Industrials | 84.1 | strong | — |
+| 9 | CF | Materials | 84.1 | strong | — |
+| 10 | CRBG | Financials | 84.1 | strong | — |
+
+**vs prev live run (2026-09-08):** entered [ACT, ADUS, APA, AVTR, COP, CRBG, DE, DINO, EXPD] · exited [HCI, HRMY, LTC, MPC, MRP, PR, PSX, TSM, VLO]
+**Movers:** ↑ SIG +47.7, ASO +39.2, AMN +32.4, BOX +29.0, CSR +28.2  ↓ CMCSA -37.6, CHTR -33.4, AA -29.7, EIX -29.0, ARLO -28.1
+
+### 2. Predictions that came due today
+
+**Live predictions** (v0.5_expanded_universe)
+
+- **2026-09-01 · v0.5_expanded_universe → 5d** (n=1514): Strong n/a (n=4) vs Weak 47.8% (n=913)
+
+**Simulated — same model, backfilled over history**
+
+- **2026-03-18 · v0.5_expanded_universe → 120d** (n=515): Strong n/a (n=4) vs Weak 40.8% (n=272)
+- **2026-08-11 · v0.5_expanded_universe → 20d** (n=1511): Strong n/a (n=15) vs Weak 51.8% (n=626)
+- **2026-06-12 · v0.5_expanded_universe → 60d** (n=515): Strong n/a (n=5) vs Weak 54.5% (n=231)
+
+_Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
+
+### 3. Running scoreboard — cumulative Strong vs Weak hit rate
+
+| Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
+|---------|-------------|-----------|-----------------|---------------|
+| 5d | n/a (n=19) | 48.1% (n=6688) | 48.6% (n=2211) | 49.8% (n=239781) |
+| 20d | n/a (n=0) | n/a (n=0) | 48.0% (n=6045) | 47.9% (n=220700) |
+| 60d | n/a (n=0) | n/a (n=0) | 48.5% (n=7053) | 44.9% (n=193154) |
+| 120d | n/a (n=0) | n/a (n=0) | 49.6% (n=6988) | 40.6% (n=147466) |
+
+_Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
+_Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
+
+### 4. Live validation tracker
+
+**4a. Fundamental-factor IC** — do value/quality earn their weight?
+
+_Live only — 15 live trading day(s) since 2026-08-20. The genuine out-of-sample read, and the one 4a exists for._
+  - value_component: 5d +0.109 (n=12981)
+  - quality_component: 5d -0.039 (n=12973)
+  - short_interest_component: 5d +0.052 (n=12883)
+
+_Full panel — includes backfilled rows. Large sample, but the weights were chosen on this data, so treat it as in-sample and flattering._
+  - value_component: 5d +0.012 (n=764696), 20d +0.023 (n=743700), 60d +0.041 (n=684902), 120d +0.063 (n=596443)
+  - quality_component: 5d -0.009 (n=770075), 20d -0.017 (n=749007), 60d -0.032 (n=689624), 120d -0.044 (n=600317)
+  - short_interest_component: 5d +0.052 (n=12883)
+
+**4b. Drift on established components** (recent-window IC vs full history)
+  - **DRIFT** momentum_component_20d@5d: -0.005 → -0.059 (recent n=14598)
+  - **DRIFT** long_momentum_component@5d: +0.000 → +0.052 (recent n=14580)
+  - **DRIFT** relative_strength_component_20d@5d: -0.004 → -0.065 (recent n=14598)
+
+---
+
 ## 2026-09-08 — v0.5_expanded_universe (live)
 
 _Run: scored 1521 tickers in 1859.2s · fetch fresh=1521 / cached=6 / failed=1 (CWEN-A)_

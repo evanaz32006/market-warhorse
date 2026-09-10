@@ -191,6 +191,14 @@ PARAMS = {
     "pattern_power_z": 2.80,
     "pattern_oos_split": 0.6,              # chronological; first 60% in-sample, last 40% held out
 
+    # A live day whose scored-ticker count falls below this fraction of the trailing norm is
+    # INCOMPLETE, not merely quiet. Recovery only looks for sessions with ZERO snapshots, so a day
+    # that scored 945 of 1,521 names reads as "present" and is never revisited — while its
+    # sector-neutral percentile ranks were computed on 62% of the universe. Observed 2026-09-10,
+    # when a run fired before Yahoo had published end-of-day bars for the whole universe.
+    "min_live_coverage_fraction": 0.90,
+    "live_coverage_lookback_days": 30,     # sessions of trailing history the norm is taken from
+
     # --- Database backup ---------------------------------------------------------------------
     # data/market_data.db is PARTIALLY IRREPLACEABLE: `fetch_period` is 2y, so yfinance no longer
     # serves bars from before the rolling two-year window, while the cache holds history from
@@ -675,6 +683,70 @@ EDGAR = {
     # A company's facts are refetched at most this often (facts change only when a new filing lands).
     "refresh_days": 7,
 }
+
+# --- SEC filing index: 8-K material events, 10-K/10-Q dates -----------------------------------
+#
+# SOURCE: the per-company submissions API, which carries the 8-K ITEM CODES. The quarterly bulk
+# index lists filings but not items, and the item code is where the whole signal lives - a 5.07
+# (annual-meeting vote) and a 4.02 (previously issued financials can no longer be relied upon) are
+# both "an 8-K", and only one of them matters.
+#
+# Unlike the Form 3/4/5 bulk datasets, this source is CURRENT (returns filings through today), so a
+# feature built on it could serve a nightly run without a second pipeline.
+SEC_SUBMISSIONS = {
+    "submissions_url": "https://data.sec.gov/submissions/CIK{cik10}.json",
+    "archive_url": "https://data.sec.gov/submissions/{name}",
+    "since_date": "2023-12-01",     # ~6 months before price history starts, so 90d lookbacks are full
+    # Regular-session close in EXCHANGE time. SEC stamps acceptanceDateTime in Eastern with an
+    # explicit offset, so the clock time in the string is already the exchange's own clock. A filing
+    # accepted at or after this hour could not be traded until the next session.
+    "market_close_hour_et": 16,
+}
+
+# Forms stored. Deliberately NARROW, unlike `edgar_facts`: a full re-ingest here is ~3 minutes at
+# 8 req/s, so widening this later is cheap and disk is the scarcer resource (the DB is already
+# 14.1 GB). Form 4 is excluded because `insider_transactions` already holds it with full detail.
+FILING_FORMS = {"8-K", "8-K/A", "10-K", "10-K/A", "10-Q", "10-Q/A"}
+
+# 8-K item codes that are PURE PAPERWORK. 9.01 is "financial statements and exhibits" - an
+# attachment notice bolted onto most other items; 5.07 is the annual shareholder vote. An 8-K
+# carrying ONLY these is administrative. Counting it as a material event is the same mistake as
+# counting an option grant as insider buying: it buries the signal under paperwork.
+ROUTINE_8K_ITEMS = {"9.01", "5.07"}
+
+# The item codes with documented price reactions, kept here so the mapping is auditable in one
+# place rather than inferred from a feature name.
+MATERIAL_8K_ITEMS = {
+    "1.01": "material_definitive_agreement",
+    "1.03": "bankruptcy_or_receivership",
+    "2.01": "completion_of_acquisition",
+    "2.02": "results_of_operations",           # the earnings release itself
+    "2.05": "exit_or_disposal_costs",
+    "2.06": "material_impairment",
+    "3.01": "delisting_or_listing_deficiency",
+    "4.01": "change_in_accountant",
+    "4.02": "non_reliance_on_prior_financials",  # the sharpest red flag on the list
+    "5.02": "officer_or_director_change",
+    "7.01": "reg_fd_disclosure",
+    "8.01": "other_events",
+}
+
+# 8-K item GROUPS the features count separately. Split rather than pooled because these events are
+# not the same kind of news: an earnings release (2.02) is scheduled and widely anticipated, a
+# non-reliance notice (4.02) is a rare shock, and a Reg FD disclosure (7.01) is usually nothing.
+# Pooling them into "an 8-K happened" averages a shock with a formality and measures neither.
+# `None` means "anything that is not pure paperwork" (see ROUTINE_8K_ITEMS).
+EVENT_8K_GROUPS = {
+    "material": None,
+    "earnings": {"2.02"},
+    "officer_change": {"5.02"},
+    "agreement": {"1.01", "2.01"},
+    "redflag": {"4.02", "2.06", "1.03", "3.01"},
+    "disclosure": {"7.01", "8.01"},
+}
+
+# Trailing windows, in CALENDAR days, over which each group is counted.
+EVENT_8K_WINDOWS = [5, 30, 90]
 
 # --- SEC Form 3/4/5 insider transactions -----------------------------------------------------
 #

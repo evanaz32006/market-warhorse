@@ -42,11 +42,14 @@ def test_record_run_success_then_status_ok_then_stale(capsys):
     rec = json.loads(storage.get_meta("last_success", db_path=db))
     assert rec["run_date"] == "2026-07-20" and rec["tickers_scored"] == 5
 
-    app._print_status(db)
+    # `today` is passed explicitly rather than defaulting to the real clock. A status test that
+    # reads date.today() passes on the day it is written and drifts into failure later — and the
+    # wall-clock check added after the 2026-09-09 missed run makes that drift immediate.
+    app._print_status(db, today="2026-07-21")                       # the very next day
     assert "OK" in capsys.readouterr().out                          # last run == latest session
 
     storage.upsert_price_rows([_spy("2026-07-21")], db_path=db)     # a newer session appears, not yet run
-    app._print_status(db)
+    app._print_status(db, today="2026-07-22")
     assert "STALE" in capsys.readouterr().out
 
 
@@ -169,3 +172,108 @@ def test_frozen_versions_are_skipped_but_their_report_rows_are_carried_forward(t
     review = evaluation.run_evaluation(db_path=db, output_dir=out)
     # the frozen version was not recomputed, but its prior rows survive
     assert frozen in set(review["model_version"]), "frozen version dropped from the report entirely"
+
+
+# ---------------------------------------------------------------------------
+# The circular-staleness bug (found live on 2026-09-09)
+# ---------------------------------------------------------------------------
+
+def test_weekdays_between_ignores_weekends():
+    assert app.weekdays_between("2026-09-08", "2026-09-10") == 1      # Tue -> Thu, Wed missed
+    assert app.weekdays_between("2026-09-08", "2026-09-09") == 0      # consecutive sessions
+    assert app.weekdays_between("2026-09-04", "2026-09-07") == 0      # Fri -> Mon, weekend only
+    assert app.weekdays_between("2026-09-04", "2026-09-08") == 1      # Fri -> Tue, Mon missed
+
+
+def test_status_detects_a_missed_run_that_the_cached_check_calls_ok(capsys):
+    """THE regression test. Reproduces 2026-09-09 exactly.
+
+    The nightly run was killed two minutes in, so no new price bar was ever fetched. The original
+    check compared the last good run_date against MAX(date) in price_history — but with no fetch,
+    that maximum is still the PREVIOUS session, which equals the last good run_date, so it reported
+    OK. The check was measuring staleness against its own stale cache and structurally could not
+    see a missed run.
+
+    A whole session vanished from the live record while the health command said everything was
+    fine. That is the exact failure shape this project exists to catch."""
+    db = _db()
+    storage.init_db(db)
+    storage.upsert_price_rows([_spy("2026-09-08")], db_path=db)
+    storage.set_meta("last_success", json.dumps({
+        "run_date": "2026-09-08", "model_version": "v0.5_expanded_universe",
+        "finished_at": "2026-09-09T01:15:53+00:00", "tickers_scored": 1521,
+        "recovered_days": []}), db_path=db)
+
+    # Wednesday the 9th was a trading session. It is now Thursday the 10th.
+    app._print_status(db, today="2026-09-10")
+    out = capsys.readouterr().out
+    assert "SUSPECT" in out, "a missed weekday session was reported as OK"
+    assert "did not complete" in out
+
+
+def test_status_still_says_ok_over_a_normal_weekend(capsys):
+    """The counterweight: Friday's run, checked on Saturday or Monday morning, is genuinely fine.
+    A staleness check that cried wolf every weekend would be turned off within a week."""
+    db = _db()
+    storage.init_db(db)
+    storage.upsert_price_rows([_spy("2026-09-04")], db_path=db)   # Friday
+    storage.set_meta("last_success", json.dumps({
+        "run_date": "2026-09-04", "model_version": "v", "finished_at": "x",
+        "tickers_scored": 1, "recovered_days": []}), db_path=db)
+    app._print_status(db, today="2026-09-07")                     # Monday
+    assert "OK" in capsys.readouterr().out
+
+
+def test_status_still_reports_plain_stale_when_new_prices_did_arrive(capsys):
+    """The original check is kept, not replaced: when a fetch DID happen but scoring did not, the
+    cached comparison is the more precise signal and should still fire."""
+    db = _db()
+    storage.init_db(db)
+    storage.upsert_price_rows([_spy("2026-09-08"), _spy("2026-09-09")], db_path=db)
+    storage.set_meta("last_success", json.dumps({
+        "run_date": "2026-09-08", "model_version": "v", "finished_at": "x",
+        "tickers_scored": 1, "recovered_days": []}), db_path=db)
+    app._print_status(db, today="2026-09-10")
+    out = capsys.readouterr().out
+    assert "STALE" in out and "2026-09-09" in out
+
+
+# ---------------------------------------------------------------------------
+# Partial-day coverage (found live on 2026-09-10)
+# ---------------------------------------------------------------------------
+
+def test_a_partially_scored_day_is_detected():
+    """Recovery only finds sessions with ZERO snapshots. A session that scored 945 of 1,521 names
+    is "present" by that test and never revisited — yet its sector-neutral percentile ranks were
+    computed on 62% of the universe. That is a silently WRONG ranking, not a missing one, which is
+    strictly worse. Observed live on 2026-09-10."""
+    counts = [(f"2026-08-{d:02d}", 1521) for d in range(1, 11)]
+    counts.append(("2026-09-10", 945))
+    thin = app.thin_live_days(counts)
+    assert len(thin) == 1
+    run_date, n, expected = thin[0]
+    assert run_date == "2026-09-10" and n == 945 and expected == 1521
+
+
+def test_normal_variation_is_not_flagged():
+    """A handful of names failing a fetch is routine. A check that fires on every ordinary run gets
+    ignored, which is the same as not having it."""
+    counts = [(f"2026-08-{d:02d}", 1521) for d in range(1, 11)]
+    counts.append(("2026-09-10", 1495))       # ~26 names short, ~98%
+    assert app.thin_live_days(counts) == []
+
+
+def test_the_norm_is_a_median_so_one_thin_day_cannot_lower_the_bar():
+    """With a mean, a single 62% day would drag the expectation down and help the NEXT thin day
+    pass — the check would quietly erode exactly when it is needed most."""
+    counts = [(f"2026-08-{d:02d}", 1500) for d in range(1, 11)]
+    counts.append(("2026-09-09", 400))        # a very thin day
+    counts.append(("2026-09-10", 1100))       # would pass against a dragged-down mean
+    flagged = {d for d, _, _ in app.thin_live_days(counts)}
+    assert flagged == {"2026-09-09", "2026-09-10"}
+
+
+def test_days_without_enough_history_are_left_alone():
+    """The first few live days have nothing to be abnormal relative to. Guessing there would flag
+    the start of every new model version."""
+    assert app.thin_live_days([("2026-08-01", 10), ("2026-08-02", 1500)]) == []

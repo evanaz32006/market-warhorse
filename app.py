@@ -14,7 +14,7 @@ import inspect
 import json
 import os
 import time
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import pandas as pd
 
@@ -555,13 +555,16 @@ def main():
                          help="v0.4 Phase 4: reconstruct point-in-time scores WITH EDGAR-derived "
                               "fundamentals under model_version=" + EDGAR_MODEL_VERSION)
     parser.add_argument("--research", choices=["decay", "walkforward", "quality", "shorthorizon", "backtest",
-                                  "sizedecay", "patterns", "insider", "all"],
+                                  "sizedecay", "patterns", "insider", "events", "all"],
                          help="run an opt-in RESEARCH analysis (report only — changes no score, "
                               "weight or model_version) and exit, never on the nightly path")
     parser.add_argument("--backup", nargs="?", const="", metavar="DEST_DIR",
                          help="write a VERIFIED, consistent snapshot of the database (VACUUM INTO, "
                               "integrity-checked and row-count-matched) and exit. Give a path on "
                               "ANOTHER physical device; omit it to use PARAMS['backup_dir']")
+    parser.add_argument("--ingest-filings", action="store_true",
+                         help="fetch the SEC filing index (8-K item codes, 10-K/10-Q dates) for the "
+                              "universe via the submissions API; idempotent per accession")
     parser.add_argument("--ingest-insider", action="store_true",
                          help="download and ingest SEC quarterly Form 3/4/5 insider datasets "
                               "(cached on disk; idempotent per quarter)")
@@ -588,6 +591,11 @@ def main():
         backup.backup_database(dest, db_path=db_path)
         return
 
+    if args.ingest_filings:
+        from src import filings
+        filings.ingest_filings(db_path=db_path)
+        return
+
     if args.ingest_insider:
         from src import insider
         insider.ingest_insider_quarters(db_path=db_path)
@@ -611,6 +619,8 @@ def main():
         if args.research in ("backtest", "all"):
             from src import backtest
             backtest.run_portfolio_backtest(db_path=db_path, model_version=version)
+        if args.research in ("events", "all"):
+            research.run_event_research(db_path=db_path, model_version=version)
         if args.research in ("insider", "all"):
             research.run_insider_research(db_path=db_path, model_version=version)
         if args.research in ("patterns", "all"):
@@ -704,9 +714,63 @@ def _record_run_success(run_result, recovered, db_path):
         print(f"[app] could not write last_success sentinel (non-fatal): {e}")
 
 
-def _print_status(db_path):
-    """Print the last successful run and whether the log is current, derived from data (not the
-    clock): compare the last good run_date to the latest completed trading session."""
+def weekdays_between(start_date, end_date):
+    """Count of weekdays strictly after `start_date` and strictly before `end_date`.
+
+    Wall-clock, deliberately — NOT derived from cached prices. See `_print_status` for why that
+    distinction is the whole point. Market holidays are not subtracted (no exchange calendar is
+    available offline), so this can OVERCOUNT by one on a holiday week. That error is in the safe
+    direction: a spurious "check this" beats a confident "all fine"."""
+    start = date.fromisoformat(start_date)
+    end = date.fromisoformat(end_date)
+    n, cur = 0, start + timedelta(days=1)
+    while cur < end:
+        if cur.weekday() < 5:
+            n += 1
+        cur += timedelta(days=1)
+    return n
+
+
+def thin_live_days(counts, min_fraction=None, lookback=None):
+    """Live days whose scored-ticker count is materially below the trailing norm.
+
+    Recovery ([`_missing_live_days`](app.py)) only finds sessions with ZERO snapshots. A session
+    that scored 945 of 1,521 names is "present" by that test and is never revisited — yet its
+    sector-neutral percentile ranks were computed on 62% of the universe, which is a silently wrong
+    ranking rather than a missing one. Observed live on 2026-09-10.
+
+    The norm is the MEDIAN of the preceding `lookback` sessions, not the mean: one thin day would
+    drag a mean down and help the next thin day pass. Days with too little history behind them to
+    judge are left alone rather than guessed at.
+
+    `counts`: [(run_date, n)] ascending. Returns [(run_date, n, expected)] worst-first."""
+    min_fraction = min_fraction if min_fraction is not None else PARAMS["min_live_coverage_fraction"]
+    lookback = lookback if lookback is not None else PARAMS["live_coverage_lookback_days"]
+    out = []
+    for i, (run_date, n) in enumerate(counts):
+        prior = [c for _, c in counts[max(0, i - lookback):i]]
+        if len(prior) < 5:
+            continue                      # not enough history to call anything abnormal
+        expected = sorted(prior)[len(prior) // 2]
+        if expected and n < expected * min_fraction:
+            out.append((run_date, n, expected))
+    return sorted(out, key=lambda r: r[1] / float(r[2]))
+
+
+def _print_status(db_path, today=None):
+    """Print the last successful run and whether the log is current.
+
+    Reports TWO independent checks, because the obvious one cannot see the failure that matters.
+
+    The cached-data check compares the last good `run_date` against `latest_trading_date`, which is
+    MAX(date) from `price_history`. That is circular: if the nightly run never completed, no new bar
+    was fetched, so the "latest session" is still the last one we already have, it equals the last
+    good run_date, and the check reports OK. A whole missed session is invisible to it — verified on
+    2026-09-09, when the run was killed 2 minutes in and `--status` still said OK the next day.
+
+    So the second check uses the WALL CLOCK: how many weekdays have passed since the last good run.
+    If a weekday has gone by AND no new price data arrived, the cache is stale too, and the honest
+    verdict is "something did not run" rather than "up to date"."""
     raw = storage.get_meta("last_success", db_path=db_path)
     if not raw:
         print("[status] no successful run recorded yet.")
@@ -716,11 +780,41 @@ def _print_status(db_path):
     print(f"[status] last success: run_date={last_rd} · model={rec.get('model_version')} · "
           f"finished={rec.get('finished_at')} · tickers={rec.get('tickers_scored')} · "
           f"recovered_days={rec.get('recovered_days')}")
-    if latest is None or last_rd == latest:
-        print(f"[status] OK — up to date with the latest trading session ({latest}).")
-    else:
+
+    today = today or date.today().isoformat()
+    missed = weekdays_between(last_rd, today) if last_rd else 0
+
+    if latest is not None and last_rd != latest:
         print(f"[status] STALE — last good run was {last_rd}, latest session is {latest}. "
               f"Next run (or recovery) will catch up.")
+    elif missed >= 1:
+        print(f"[status] SUSPECT — {missed} weekday(s) have passed since {last_rd} and NO new "
+              f"price data arrived either. That means the nightly run did not complete, not that "
+              f"the market was quiet. (A weekday market holiday is the benign explanation.)")
+        print(f"[status] Fix: run `python app.py` — recovery reconstructs missed sessions. "
+              f"Then check Task Scheduler's Last Run Result for 'Warhorse Daily Run'.")
+    else:
+        print(f"[status] OK — up to date with the latest trading session ({latest}).")
+
+    # Coverage is a SEPARATE question from freshness. A day can be present and current while having
+    # scored two thirds of the universe.
+    thin = thin_live_days(storage.live_snapshot_counts(PARAMS["model_version"], db_path=db_path))
+    recent = [t for t in thin if not last_rd or t[0] >= _n_sessions_back(db_path, 30)]
+    if recent:
+        print(f"[status] INCOMPLETE COVERAGE — {len(recent)} recent session(s) scored well "
+              f"below the norm; their cross-sectional ranks were computed on a partial universe:")
+        for run_date, n, expected in recent[:5]:
+            print(f"[status]   {run_date}: {n} tickers vs a trailing median of {expected} "
+                  f"({100.0 * n / expected:.0f}%)")
+        print(f"[status] Usually a run that fired before the data vendor published end-of-day bars "
+              f"for the whole universe. Re-running on the SAME session date refills it; once the "
+              f"market moves on, that day stays partial.")
+
+
+def _n_sessions_back(db_path, n):
+    """The run_date `n` sessions before the latest, or the empty string if history is shorter."""
+    cal = storage.live_snapshot_counts(PARAMS["model_version"], db_path=db_path)
+    return cal[-n][0] if len(cal) > n else ""
 
 
 def _run_journal_and_brief(run_result, backfilled, fetch_summary, start_time, db_path, sector_map=None,
