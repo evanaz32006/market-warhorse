@@ -1,6 +1,110 @@
 # SESSION_STATE.md
 
-Last updated: 2026-09-09
+Last updated: 2026-09-10
+
+---
+
+## SEC Form 4 insider transactions — INGESTED and MEASURED (2026-09-10)
+
+`src/insider.py` + `src/backup.py` + `tests/test_insider.py` (18) + `tests/test_backup.py` (6).
+`python app.py --ingest-insider`, then `--research insider`. **Report only.** No feature column, no
+`model_version` bump, nothing deployed.
+
+### Source choice
+
+SEC publishes QUARTERLY structured Form 345 datasets — every ownership filing already parsed into
+TSVs. **Nine downloads (~94 MB) cover the whole price history.** Enumerating the same filings
+through the submissions API would have been roughly 200,000 HTTP requests against an 8/s throttle:
+days of wall clock for byte-identical data.
+
+Ingested **480,796 rows across 1,483 of 1,509 universe names, filed 2024-01-02 .. 2026-03-31.**
+
+### Four traps in this dataset, all of which produce plausible wrong numbers
+
+1. **`FILING_DATE` vs `TRANS_DATE`.** An insider has two business days to report. Gating on the
+   trade date grants several days of foresight per filing — a textbook leak. The gate is
+   `filed_date`, and `test_a_filing_is_invisible_until_its_filing_date` asserts it directly.
+2. **Compensation is not an opinion.** Measured code mix: S 82,879 / A 62,301 / F 57,748 /
+   M 43,112 vs **P 6,542**. Grants, option exercises and tax withholding outnumber genuine
+   open-market purchases **25:1**. Counting all "acquisitions" would have buried the one code with
+   a documented anomaly behind an order of magnitude of payroll noise.
+3. **Two independent duplication paths.** 1,151 of 63,284 filings in a single quarter carry
+   MULTIPLE reporting owners (up to 10) — keying storage by owner multiplies one trade's shares by
+   up to 10x. Separately, affiliated entities file separately for the SAME economic trade under
+   different accession numbers (two Apollo entities, the same 1,185,242-share TBLA disposition), so
+   aggregation dedupes on the trade's own attributes; the accession number cannot distinguish them.
+4. **SEC's `ISSUERTRADINGSYMBOL` is filer-typed free text.** It arrives as `(CALX)`, `-`,
+   `BFA, BFB`, `BIO BIO.B`, `BRK.A`. Joining on it returned **ZERO insider rows for 35 of our
+   names** whose filings were in the store the whole time — a coverage hole that looks exactly like
+   a company whose insiders never trade. Ticker is now resolved from CIK; SEC's string is kept as
+   `sec_symbol` for audit only, never as a key.
+
+### Coverage gap, stated rather than hidden
+
+SEC publishes on a lag. Verified 2026-09-10: 2024Q1–2026Q1 exist, 2026Q2/Q3 return 404. So the store
+ends **2026-03-31** while prices run to 2026-09-08. Reads past coverage return `None` with
+`coverage_missing=True`, **never 0** — 164,799 of 797,530 panel rows were dropped on that basis
+rather than zero-filled. An absence of data is not an absence of buying (CLAUDE.md #2).
+
+### The result: no usable signal — but read the reason carefully
+
+Pre-registered reading (written before the numbers): insider buying should show POSITIVE IC GROWING
+with horizon, peaking 60–120d, strongest for officers.
+
+Observed, on 632,731 covered name-days over 444 run dates:
+
+| feature | h=5 | h=20 | h=60 | h=120 |
+|---|---|---|---|---|
+| `insider_buy_count_90d` IC | 0.0066 | 0.0029 | 0.0034 | 0.0024 |
+| `insider_officer_buy_count_90d` IC | 0.0045 | -0.0015 | **-0.0125** | **-0.0152** |
+| `days_since_insider_buy` IC | -0.0131 | -0.0162 | -0.0134 | -0.0029 |
+
+**Every |t| < 1.5.** The shape is wrong too — decaying with horizon rather than growing, and the
+officer measure (the literature's STRONGEST prediction) turns negative at 60–120d.
+
+Event study — names with ≥1 open-market purchase in the trailing 90d vs names without, 95,845
+name-days with a purchase: +0.09% at 5d (t=1.46), +0.07% at 20d, +0.22% at 60d but with a
+**negative median (-0.08%) and a 47% hit rate**, i.e. the 60d mean is a few large winners rather
+than a broad effect. At 120d, +0.03% mean against a -0.33% median.
+
+### The honest caveat, and it is the important part
+
+`min_detectable_ic` — the smallest true IC this panel could detect at 80% power — is:
+
+| horizon | effective independent n | min detectable IC |
+|---|---|---|
+| 5d | 88.8 | 0.014 |
+| 20d | 22.2 | 0.021 |
+| 60d | 7.4 | **0.039** |
+| 120d | 3.6 | **0.062** |
+
+The published insider-buying anomaly corresponds to a cross-sectional IC of roughly 0.02–0.03.
+**At 60–120d — exactly where the effect is supposed to live — this sample could not have detected it
+even if it is entirely real.** So the correct statement is NOT "insider buying does not work". It is
+**"2.25 years of data cannot answer this question at the horizons that matter."** At 5d, where the
+sample IS adequate (MDE 0.014 vs observed 0.0066), there is genuinely nothing — but nobody claims
+the effect lives at 5d.
+
+This is the fifth hypothesis measured and not confirmed, and the first one where the limiting factor
+is provably the sample rather than the signal. **Only calendar time fixes it.** The store is built,
+gated and tested, so re-measuring later costs one command.
+
+### Database backup — DONE (`src/backup.py`, `python app.py --backup <DEST>`)
+
+`VACUUM INTO`, never a file copy: in WAL mode the `-wal` sidecar holds committed pages not yet in
+the main file, so a plain copy silently loses recent writes — `test_backup_survives_wal_mode` writes
+rows without checkpointing and asserts they survive. Every backup is then reopened,
+`PRAGMA integrity_check`-ed and row-count-matched against the source, and **raises** on failure
+rather than reporting it in a field nobody reads. Also fixed a real bug found by its own test: two
+backups in the same second collided on the timestamp and `VACUUM INTO` failed opaquely.
+
+**Still needs to actually be RUN, to a different physical device.**
+
+### Also written: `RUNBOOK.md`
+
+The "operate this alone" document. What to run daily (`--status`), weekly (`--backup`), how to read
+`performance_review.csv` without fooling yourself, what breaks and what to do, and the five things
+that will bite an operator with no memory of the build.
 
 ---
 

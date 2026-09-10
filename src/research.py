@@ -1191,6 +1191,18 @@ def fit_regression_weights(panel, window, variant, components, alpha=None):
 INSIDER_HORIZONS = [5, 20, 60, 120]
 
 
+def _min_detectable(std, n_days, horizon):
+    """Smallest true effect this sample could detect at 80% power, two-sided alpha 0.05.
+
+    z(0.975) + z(0.80) = 2.80, times the standard error on the OVERLAP-ADJUSTED sample. Reported
+    next to every null so "no signal found" can be distinguished from "no signal this much data
+    could ever have seen"."""
+    if std in (None, 0) or not n_days or pd.isna(std):
+        return None
+    effective_n = max(1.0, n_days / float(horizon))
+    return float(PARAMS["pattern_power_z"] * std / math.sqrt(effective_n))
+
+
 def _insider_panel_frame(panel, index, window_days=90):
     """(run_date, ticker, insider features, forward excess returns) for every covered snapshot.
 
@@ -1272,10 +1284,17 @@ def run_insider_research(db_path=storage.DEFAULT_DB_PATH, model_version=None, ou
                 "window_days": window_days,
                 "ic_mean": stats["mean"], "ic_median": stats["median"],
                 "ic_pct_positive": stats["pct_positive"], "n_days": stats["n_days"],
+                "ic_std": stats["std"],
                 "overlap_adjusted_t": evaluation._overlap_adjusted_t(
                     stats["mean"], stats["std"], stats["n_days"], h),
                 "effective_independent_n": (round(stats["n_days"] / float(h), 1)
                                             if stats["n_days"] else 0),
+                # THE column that decides how to read a null. The same reasoning as the pattern
+                # harness: at 120d this panel has ~3.6 independent observations, so an IC below
+                # roughly 0.06 is invisible from here no matter how real it is. Without this,
+                # "we found nothing" gets read as "there is nothing", which is a different and
+                # much stronger claim than the data can support.
+                "min_detectable_ic": _min_detectable(stats["std"], stats["n_days"], h),
                 "generated_at": _now_iso(),
             })
 

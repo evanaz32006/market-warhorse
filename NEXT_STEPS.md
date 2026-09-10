@@ -90,13 +90,27 @@ Tier 1, GDELT is the defensible entry point.
 
 ## Execution order
 
-1. **Build the conditional-pattern harness** (the force multiplier).
-2. **Run the owner's own hypotheses through it** — day-of-week, post-strong-week sector reversal.
-   Fast feedback, uses existing data, directly answers a question he asked.
-3. **Form 4 ingest** — biggest genuinely-new signal for the least new infrastructure.
-4. **8-K event flags** — same pipeline, second pass.
+1. ~~**Build the conditional-pattern harness**~~ — **DONE 2026-09-09**, `src/patterns.py`,
+   `--research patterns`. 18 tests.
+2. ~~**Run the owner's own hypotheses through it**~~ — **DONE.** 198 tests across 6 families.
+   8 nominally significant, 9.6 expected by chance, **zero surviving correction**. Friday is the
+   STRONGEST weekday for SPY, not the weakest (t = 1.42, n.s.). Full detail in SESSION_STATE.
+3. ~~**Form 4 ingest**~~ — **DONE 2026-09-10**, `src/insider.py`, `--ingest-insider`,
+   `--research insider`. 480,796 rows, 1,483 of 1,509 names, filed 2024-01-02 .. 2026-03-31.
+4. **8-K event flags** — same EDGAR pipeline, next up.
 5. **Breadth/regime features.**
 6. Re-evaluate. Tier 2 only if time remains.
+
+### Carried forward from the Form 4 work
+
+- **Insider coverage ends 2026-03-31** while prices run to 2026-09-08, because SEC publishes the
+  quarterly datasets on a lag (2026Q2/Q3 return 404). Reads past that date return `None` with
+  `coverage_missing=True`, never 0. **A live path would be needed before this could ever become a
+  scored feature** — the bulk datasets alone cannot serve a nightly run. That work is deliberately
+  NOT done yet: measure first, deploy later. If the signal is not there, the live path is days
+  spent wiring up a dead factor.
+- **`--research patterns` and `--research insider` are report-only** and read no `model_version`
+  state, so neither needs re-running when a version is promoted.
 
 Each new factor follows the established discipline: new feature column → new `model_version` →
 pre-registered validation gate → backfill → IC measured against priors. **One variable at a time.**
@@ -107,10 +121,13 @@ pre-registered validation gate → backfill → IC measured against priors. **On
 
 After the deadline the owner operates this alone.
 
-- **`data/market_data.db` is 14.1 GB and PARTIALLY IRREPLACEABLE.** `fetch_period` is 2y, so bars
-  before ~2024-09 can no longer be refetched, while the cache holds history from 2024-06-24. Losing
-  the file permanently destroys that window. **Needs a backup script (`VACUUM INTO` to an external
-  drive). Not optional.**
+- ~~**`data/market_data.db` backup script**~~ — **DONE 2026-09-10**, `src/backup.py`,
+  `python app.py --backup <DEST_DIR>`. Uses `VACUUM INTO` (a plain file copy in WAL mode silently
+  loses uncheckpointed writes), then reopens the result, runs `PRAGMA integrity_check`, and matches
+  row counts against the source — raising on failure rather than reporting it in a field nobody
+  reads. **Still needs to actually be RUN, to a different physical device.** The file is 14.1 GB and
+  partially irreplaceable: `fetch_period` is 2y, so bars older than the rolling two-year window
+  exist in exactly one place.
 - Code is now in git (local, no remote). A remote would need the owner's explicit go-ahead.
 - A short "operate this alone" doc: what to run, what breaks, how to read the daily log.
 
