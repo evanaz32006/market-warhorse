@@ -555,9 +555,16 @@ def main():
                          help="v0.4 Phase 4: reconstruct point-in-time scores WITH EDGAR-derived "
                               "fundamentals under model_version=" + EDGAR_MODEL_VERSION)
     parser.add_argument("--research", choices=["decay", "walkforward", "quality", "shorthorizon", "backtest",
-                                  "sizedecay", "patterns", "all"],
+                                  "sizedecay", "patterns", "insider", "all"],
                          help="run an opt-in RESEARCH analysis (report only — changes no score, "
                               "weight or model_version) and exit, never on the nightly path")
+    parser.add_argument("--backup", nargs="?", const="", metavar="DEST_DIR",
+                         help="write a VERIFIED, consistent snapshot of the database (VACUUM INTO, "
+                              "integrity-checked and row-count-matched) and exit. Give a path on "
+                              "ANOTHER physical device; omit it to use PARAMS['backup_dir']")
+    parser.add_argument("--ingest-insider", action="store_true",
+                         help="download and ingest SEC quarterly Form 3/4/5 insider datasets "
+                              "(cached on disk; idempotent per quarter)")
     parser.add_argument("--research-version", default=None,
                          help="model_version for --research (default: config PARAMS model_version)")
     parser.add_argument("--status", action="store_true",
@@ -572,6 +579,18 @@ def main():
 
     if args.status:
         _print_status(db_path)
+        return
+
+    if args.backup is not None:
+        from src import backup
+        dest = args.backup or os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                           *PARAMS["backup_dir"].split("/"))
+        backup.backup_database(dest, db_path=db_path)
+        return
+
+    if args.ingest_insider:
+        from src import insider
+        insider.ingest_insider_quarters(db_path=db_path)
         return
 
     # Research analyses return BEFORE any fetching or scoring: a structural guarantee that a
@@ -592,6 +611,8 @@ def main():
         if args.research in ("backtest", "all"):
             from src import backtest
             backtest.run_portfolio_backtest(db_path=db_path, model_version=version)
+        if args.research in ("insider", "all"):
+            research.run_insider_research(db_path=db_path, model_version=version)
         if args.research in ("patterns", "all"):
             # Deliberately takes no model_version: the pattern harness reads PRICE HISTORY only,
             # never `feature_snapshots`, so it is unaffected by which model is live and its

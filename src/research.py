@@ -1169,3 +1169,154 @@ def fit_regression_weights(panel, window, variant, components, alpha=None):
     weights.update({c: float(w) / total for c, w in zip(usable, coef)})
     return (weights, {"degenerate": False, "n_train_rows": int(len(y)), "n_clipped": clipped,
                       "n_unavailable": len(unavailable), "unavailable": unavailable})
+
+
+# ---------------------------------------------------------------------------
+# (f) SEC Form 4 insider transactions — REPORT ONLY
+# ---------------------------------------------------------------------------
+
+# PRE-REGISTERED READING, written before the numbers were seen (the standing discipline from
+# ROADMAP: state the expected pattern first, so a surprising result triggers a bug hunt rather than
+# a celebration).
+#
+#   The published anomaly says OPEN-MARKET INSIDER BUYING predicts positive abnormal returns over
+#   roughly 1-12 months, is stronger for smaller companies, and is stronger for officers and
+#   directors than for 10% holders. Insider SELLING is much weaker and noisier, because selling is
+#   driven by diversification, tax and pre-scheduled plans as often as by information.
+#
+#   So: IC on the buy-side measures should be POSITIVE and should GROW with horizon, peaking around
+#   60-120d. If instead the signal is strongest at 1-5d, or the sign is negative, that is a reason
+#   to suspect the date join before believing the result — the same rule CLAUDE.md applies to
+#   momentum.
+INSIDER_HORIZONS = [5, 20, 60, 120]
+
+
+def _insider_panel_frame(panel, index, window_days=90):
+    """(run_date, ticker, insider features, forward excess returns) for every covered snapshot.
+
+    Rows whose date lies past the end of ingested coverage are DROPPED, never zero-filled. A gap in
+    the data and a genuine absence of insider buying are different facts, and writing both as 0
+    would manufacture a "no insider interest" signal out of a publication lag."""
+    from src.insider import INSIDER_FEATURE_COLUMNS, features_from_index
+
+    max_h = max(INSIDER_HORIZONS)
+    records, skipped_uncovered = [], 0
+    for run_date, ticker, benchmark in zip(panel.frame["run_date"], panel.frame["ticker"],
+                                           panel.frame["benchmark"]):
+        feats = features_from_index(index, ticker, run_date, window_days=window_days)
+        if feats["coverage_missing"]:
+            skipped_uncovered += 1
+            continue
+        fwd = forward_excess_vector(ticker, benchmark, run_date, panel, max_h)
+        rec = {"run_date": run_date, "ticker": ticker}
+        for c in INSIDER_FEATURE_COLUMNS:
+            rec[c] = feats.get(c)
+        for h in INSIDER_HORIZONS:
+            v = fwd[h - 1]
+            rec["excess_%dd" % h] = float(v) if not np.isnan(v) else None
+        records.append(rec)
+    print("[research] insider panel: %d rows, %d dropped as outside coverage (never zero-filled)"
+          % (len(records), skipped_uncovered))
+    return pd.DataFrame(records)
+
+
+def run_insider_research(db_path=storage.DEFAULT_DB_PATH, model_version=None, output_dir=None,
+                         window_days=90):
+    """Does open-market insider buying predict forward excess return? REPORT ONLY.
+
+    Two views, because they answer different questions:
+      * insider_ic.csv — cross-sectional Spearman IC per feature per horizon. Asks whether the
+        ORDERING is informative, directly comparable with every other factor in this project.
+      * insider_event_study.csv — the binary version: names with at least one purchase in the
+        trailing window against names with none. Asks whether the EVENT is tradeable, which is the
+        form the anomaly is actually published in and is far easier to act on.
+    """
+    from src import insider as insider_mod
+
+    model_version = model_version or PARAMS["model_version"]
+    panel = load_panel(db_path, model_version)
+    if panel is None:
+        print("[research] no snapshots for %s" % model_version)
+        return pd.DataFrame()
+    index = insider_mod.build_insider_index(db_path=db_path)
+    if not index.by_ticker:
+        raise RuntimeError(
+            "insider store is empty — run the insider ingest first. Refusing to report 'no signal' "
+            "from an empty table, which is indistinguishable from a real null.")
+    print("[research] insider coverage %s .. %s, %d tickers with P/S activity"
+          % (index.coverage_start, index.coverage_end, len(index.by_ticker)))
+
+    frame = _insider_panel_frame(panel, index, window_days=window_days)
+    if frame.empty:
+        print("[research] no covered snapshots — nothing to measure")
+        return pd.DataFrame()
+
+    ic_rows, event_rows = [], []
+    for h in INSIDER_HORIZONS:
+        excess_col = "excess_%dd" % h
+        matured = frame[frame[excess_col].notna()]
+        for feat in insider_mod.INSIDER_FEATURE_COLUMNS:
+            daily = []
+            for _, sub in matured.groupby("run_date"):
+                s = sub[[feat, excess_col]].dropna()
+                # A day where every name has the same value (usually zero) carries no ordering
+                # information at all. Including it would report an IC of 0 for a day that measured
+                # nothing, dragging the average toward zero and hiding whatever the active days say.
+                if len(s) < PARAMS["decay_min_names_per_day"] or s[feat].nunique() < 2:
+                    continue
+                daily.append(evaluation._spearman_ic(s, feat, excess_col))
+            daily = [v for v in daily if v is not None and not pd.isna(v)]
+            stats = evaluation._aggregate_daily(pd.Series(daily, dtype=float))
+            ic_rows.append({
+                "model_version": model_version, "feature": feat, "horizon": h,
+                "window_days": window_days,
+                "ic_mean": stats["mean"], "ic_median": stats["median"],
+                "ic_pct_positive": stats["pct_positive"], "n_days": stats["n_days"],
+                "overlap_adjusted_t": evaluation._overlap_adjusted_t(
+                    stats["mean"], stats["std"], stats["n_days"], h),
+                "effective_independent_n": (round(stats["n_days"] / float(h), 1)
+                                            if stats["n_days"] else 0),
+                "generated_at": _now_iso(),
+            })
+
+        # Event study. Per-day means FIRST, then averaged across days — pooling every (name, date)
+        # row would weight a day with 40 buyers 40x a day with one, and would treat overlapping
+        # forward windows as independent observations.
+        buy_col = "insider_buy_count_%dd" % window_days
+        day_diffs, day_hits, n_events = [], [], 0
+        for _, sub in matured.groupby("run_date"):
+            hit = sub[sub[buy_col] > 0]
+            miss = sub[sub[buy_col] == 0]
+            if len(hit) < 3 or len(miss) < PARAMS["decay_min_names_per_day"]:
+                continue
+            day_diffs.append(float(hit[excess_col].mean() - miss[excess_col].mean()))
+            day_hits.append(float((hit[excess_col] > 0).mean() * 100.0))
+            n_events += len(hit)
+        stats = evaluation._aggregate_daily(pd.Series(day_diffs, dtype=float))
+        event_rows.append({
+            "model_version": model_version, "horizon": h, "window_days": window_days,
+            "n_days": stats["n_days"], "n_name_days_with_a_purchase": n_events,
+            "mean_excess_spread_pct": ((stats["mean"] * 100.0)
+                                       if stats["mean"] is not None else None),
+            "median_excess_spread_pct": ((stats["median"] * 100.0)
+                                         if stats["median"] is not None else None),
+            "pct_of_days_positive": stats["pct_positive"],
+            "hit_rate_pct": float(np.mean(day_hits)) if day_hits else None,
+            "overlap_adjusted_t": evaluation._overlap_adjusted_t(
+                stats["mean"], stats["std"], stats["n_days"], h),
+            "effective_independent_n": (round(stats["n_days"] / float(h), 1)
+                                        if stats["n_days"] else 0),
+            "survivorship_biased": True,
+            "coverage_first_filed": index.coverage_start,
+            "coverage_last_filed": index.coverage_end,
+            "generated_at": _now_iso(),
+        })
+
+    out_dir = _output_dir(output_dir)
+    ic_df = pd.DataFrame(ic_rows)
+    ev_df = pd.DataFrame(event_rows)
+    ic_df.to_csv(os.path.join(out_dir, "insider_ic.csv"), index=False)
+    ev_df.to_csv(os.path.join(out_dir, "insider_event_study.csv"), index=False)
+    print("[research] insider IC: %d rows -> insider_ic.csv" % len(ic_df))
+    print("[research] insider event study: %d rows -> insider_event_study.csv" % len(ev_df))
+    return ic_df

@@ -229,6 +229,61 @@ def init_db(db_path=DEFAULT_DB_PATH):
         # re-derive, never a re-ingest. Stored verbatim; parsing/derivation happens on READ (the resolver).
         # PK dedupes a fact reported identically across filings; the same period reported by DIFFERENT
         # accessions is kept (originally-filed vs restatement) so the resolver can pick earliest-filed.
+        # SEC Form 3/4/5 insider transactions, one row per reported transaction.
+        #
+        # `filed_date` is the POINT-IN-TIME GATE and is indexed for it: an insider has two business
+        # days to report, so `trans_date` is knowledge the market did not have. Every read goes
+        # through `load_insider_transactions(..., filed_on_or_before=D)`.
+        #
+        # The primary key is (accession, trans_sk, table_kind): the same surrogate key space is
+        # reused between the derivative and non-derivative tables in SEC's own datasets, so the
+        # table of origin has to be part of the key or one silently overwrites the other.
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS insider_transactions (
+                accession TEXT NOT NULL,
+                trans_sk TEXT NOT NULL,
+                table_kind TEXT NOT NULL,
+                cik TEXT NOT NULL,
+                -- OUR ticker, resolved from the CIK via cik_map. Never SEC's own symbol field:
+                -- ISSUERTRADINGSYMBOL is free text typed by the filer and arrives as "(CALX)",
+                -- "-", "BFA, BFB", "BIO BIO.B", "BRK.A". Joining on it silently returned ZERO
+                -- insider rows for 35 of our names whose data was present all along. CIK is the
+                -- only stable key, which is why the universe filter uses it too.
+                ticker TEXT,
+                sec_symbol TEXT,          -- kept verbatim for audit, never used to join
+                filed_date TEXT NOT NULL,
+                trans_date TEXT,
+                doc_type TEXT,
+                trans_code TEXT,
+                acquired_disposed TEXT,
+                shares REAL,
+                price_per_share REAL,
+                value_usd REAL,
+                shares_owned_after REAL,
+                owner_cik TEXT,
+                owner_name TEXT,
+                relationship TEXT,
+                owner_title TEXT,
+                is_director INTEGER NOT NULL DEFAULT 0,
+                is_officer INTEGER NOT NULL DEFAULT 0,
+                is_ten_pct_owner INTEGER NOT NULL DEFAULT 0,
+                is_10b5_1 INTEGER NOT NULL DEFAULT 0,
+                direct_indirect TEXT,
+                ingested_at TEXT NOT NULL,
+                -- Owner is DENORMALIZED onto the transaction rather than keyed, deliberately.
+                -- 1,151 of 63,284 filings in a single quarter carry MULTIPLE reporting owners (up
+                -- to 10). Keying by owner would store one copy of the same economic transaction per
+                -- co-filer and multiply its share count by up to 10x in any aggregate. So the
+                -- relationship flags are OR-ed across every owner on the filing and the transaction
+                -- is stored once.
+                PRIMARY KEY (accession, trans_sk, table_kind)
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_insider_ticker_filed "
+                     "ON insider_transactions(ticker, filed_date)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_insider_filed "
+                     "ON insider_transactions(filed_date)")
+
         conn.execute("""
             CREATE TABLE IF NOT EXISTS edgar_facts (
                 cik TEXT NOT NULL,
@@ -777,5 +832,87 @@ def upsert_feature_snapshot(row, db_path=DEFAULT_DB_PATH):
     try:
         conn.execute(_snapshot_upsert_sql(all_cols), _normalized_snapshot_row(row, all_cols))
         conn.commit()
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
+# SEC Form 3/4/5 insider transactions
+# ---------------------------------------------------------------------------
+
+INSIDER_COLUMNS = [
+    "accession", "trans_sk", "table_kind", "cik", "ticker", "sec_symbol", "filed_date", "trans_date",
+    "doc_type", "trans_code", "acquired_disposed", "shares", "price_per_share", "value_usd",
+    "shares_owned_after", "owner_cik", "owner_name", "relationship", "owner_title",
+    "is_director", "is_officer", "is_ten_pct_owner", "is_10b5_1", "direct_indirect",
+    "ingested_at",
+]
+
+
+def upsert_insider_transactions(rows, db_path=DEFAULT_DB_PATH):
+    """Batch-write insider transaction rows. Idempotent on the primary key, so re-parsing a
+    quarter's dataset is safe and a partially-ingested quarter can simply be re-run."""
+    if not rows:
+        return 0
+    cols = INSIDER_COLUMNS
+    sql = (f"INSERT OR REPLACE INTO insider_transactions ({', '.join(cols)}) "
+           f"VALUES ({', '.join('?' for _ in cols)})")
+    payload = [tuple(r.get(c) for c in cols) for r in rows]
+    conn = _connect(db_path)
+    try:
+        conn.executemany(sql, payload)
+        conn.commit()
+    finally:
+        conn.close()
+    return len(payload)
+
+
+def load_insider_transactions(ticker=None, filed_on_or_before=None, filed_on_or_after=None,
+                              codes=None, db_path=DEFAULT_DB_PATH):
+    """Insider rows, optionally gated to what had been FILED by a given date.
+
+    `filed_on_or_before` is the point-in-time gate and the only correct way to read this table for
+    anything that feeds a score. It is deliberately a required-feeling keyword rather than a default
+    of "everything": a caller that forgets it gets the whole history, which is why every consumer in
+    this project passes it explicitly and `tests/test_insider.py` asserts the gate directly."""
+    where, params = [], []
+    if ticker:
+        where.append("ticker = ?")
+        params.append(ticker)
+    if filed_on_or_before:
+        where.append("filed_date <= ?")
+        params.append(filed_on_or_before)
+    if filed_on_or_after:
+        where.append("filed_date >= ?")
+        params.append(filed_on_or_after)
+    if codes:
+        where.append("trans_code IN (%s)" % ", ".join("?" for _ in codes))
+        params.extend(list(codes))
+    sql = "SELECT * FROM insider_transactions"
+    if where:
+        sql += " WHERE " + " AND ".join(where)
+    sql += " ORDER BY filed_date, accession"
+    conn = _connect(db_path)
+    try:
+        conn.row_factory = sqlite3.Row
+        return [dict(r) for r in conn.execute(sql, params).fetchall()]
+    finally:
+        conn.close()
+
+
+def insider_coverage(db_path=DEFAULT_DB_PATH):
+    """(min_filed_date, max_filed_date, n_rows, n_tickers) actually present in the store.
+
+    Read from the DATA rather than from config, because the honest answer to "do we know whether
+    there was insider buying on 2026-07-01?" is decided by what was ingested, not by what was
+    intended. Anything past `max_filed_date` is UNKNOWN and must never be reported as zero
+    activity — CLAUDE.md invariant #2."""
+    conn = _connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT MIN(filed_date), MAX(filed_date), COUNT(*), COUNT(DISTINCT ticker) "
+            "FROM insider_transactions").fetchone()
+        return {"first_filed_date": row[0], "last_filed_date": row[1],
+                "n_rows": row[2], "n_tickers": row[3]}
     finally:
         conn.close()

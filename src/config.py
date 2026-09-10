@@ -191,6 +191,14 @@ PARAMS = {
     "pattern_power_z": 2.80,
     "pattern_oos_split": 0.6,              # chronological; first 60% in-sample, last 40% held out
 
+    # --- Database backup ---------------------------------------------------------------------
+    # data/market_data.db is PARTIALLY IRREPLACEABLE: `fetch_period` is 2y, so yfinance no longer
+    # serves bars from before the rolling two-year window, while the cache holds history from
+    # 2024-06-24. Everything older than that window exists in exactly one place — this file.
+    # Default destination is deliberately INSIDE the repo folder only as a fallback; a real backup
+    # belongs on a different physical device, which is why the path is a CLI argument.
+    "backup_dir": "backups",
+
     # --- Shared research plumbing ---------------------------------------------------------------
     "calendar_ticker": "SPY",              # the ONE master session calendar (was a literal in journal.py)
     "research_output_dir": "output/research",
@@ -667,6 +675,59 @@ EDGAR = {
     # A company's facts are refetched at most this often (facts change only when a new filing lands).
     "refresh_days": 7,
 }
+
+# --- SEC Form 3/4/5 insider transactions -----------------------------------------------------
+#
+# SOURCE CHOICE, and it is the whole reason this is affordable: SEC publishes QUARTERLY structured
+# datasets containing every ownership filing already parsed into TSVs. Nine downloads (~94 MB) cover
+# the entire price history. Enumerating the same filings one at a time through the submissions API
+# would be roughly 200,000 HTTP requests — days of wall clock against an 8/s throttle, for identical
+# data.
+#
+# THE POINT-IN-TIME GATE IS `FILING_DATE`, NEVER `TRANS_DATE`. An insider has two business days to
+# report, so the market cannot know about a purchase on the day it happened. Gating on the
+# transaction date would hand the model several days of foresight per filing and produce exactly the
+# kind of beautiful, false backtest CLAUDE.md invariant #1 exists to prevent.
+INSIDER = {
+    "dataset_url": ("https://www.sec.gov/files/structureddata/data/"
+                    "insider-transactions-data-sets/{year}q{quarter}_form345.zip"),
+    "cache_dir": "data/insider_datasets",   # zips are cached; a re-run re-parses, never re-downloads
+    # Coverage. SEC publishes these on a lag — verified 2026-09-10: 2024Q1 through 2026Q1 exist,
+    # 2026Q2 and 2026Q3 return 404. So the store ENDS at 2026-03-31 while price history runs to
+    # 2026-09-08. That gap is recorded in `meta` and enforced by `coverage_end`: a date past the end
+    # of coverage must return "unknown", never "no insider activity". Absence of data is not a zero.
+    "first_quarter": (2024, 1),
+    "last_quarter": (2026, 1),
+    "request_timeout_sec": 180,             # these are 8-14 MB files, not JSON blobs
+    "max_retries": 3,
+    "backoff_base_sec": 2.0,
+}
+
+# Form 4 transaction codes, and which of them carry INFORMATION rather than compensation mechanics.
+#
+# This split is the entire signal. An insider "acquiring" shares is usually just being paid: code A
+# is a grant, M is an option exercise, F is shares withheld to cover the tax on a grant. None of
+# those reflect an opinion about the price. Code P — an open-market purchase with the insider's own
+# money — is the one with a documented anomaly behind it. Treating all acquisitions alike would bury
+# that signal under an order of magnitude more compensation noise.
+INSIDER_TRANS_CODES = {
+    "P": "open_market_purchase",   # the informative one
+    "S": "open_market_sale",       # informative but noisy: diversification, tax, scheduled plans
+    "A": "grant_award",            # compensation
+    "M": "option_exercise",        # compensation
+    "F": "tax_withholding",        # compensation
+    "G": "gift",
+    "C": "conversion",
+    "D": "disposition_to_issuer",
+    "X": "option_exercise_in_money",
+    "J": "other",
+}
+INSIDER_INFORMATIVE_CODES = {"P", "S"}
+INSIDER_PURCHASE_CODES = {"P"}
+
+# Reporting-owner relationships, collapsed. The raw field is a free-ish text list ("Director",
+# "Officer", "TenPercentOwner", or several joined), so it is normalized once on ingest.
+INSIDER_RELATIONSHIPS = ["Director", "Officer", "TenPercentOwner", "Other"]
 
 # Ordered XBRL tag fallback chains per CONCEPT (us-gaap taxonomy unless a "dei:" prefix says otherwise).
 # XBRL tagging varies by filer, so each concept tries tags in order; the FIRST present in a filing wins,
