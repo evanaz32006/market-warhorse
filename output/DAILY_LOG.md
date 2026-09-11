@@ -6,8 +6,8 @@ _Machine-appended after every run. Regenerated from the `journal` table; do not 
 
 ## 2026-09-10 — v0.5_expanded_universe (live)
 
-_Run: scored 945 tickers in 1299.3s · fetch fresh=945 / cached=582 / failed=1 (CWEN-A)_
-_Warnings: 1 ticker(s) failed price fetch; 583 ticker(s) skipped (stale / no data)_
+_Run: scored 1521 tickers in 1570.7s · fetch fresh=576 / cached=951 / failed=1 (CWEN-A)_
+_Warnings: 1 ticker(s) failed price fetch; 7 ticker(s) skipped (stale / no data)_
 
 ### 1. Today's Rankings
 
@@ -15,31 +15,31 @@ _Research ranking, NOT a buy recommendation._
 
 | # | Ticker | Sector | score_20d | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
-| 1 | PR | Energy | 81.1 | strong | 55d |
-| 2 | HCI | Financials | 80.3 | strong | 56d |
-| 3 | VLO | Energy | 80.2 | strong | 42d |
-| 4 | PSX | Energy | 80.1 | strong | 49d |
-| 5 | RNR | Financials | 79.9 | decent | 54d |
-| 6 | MPC | Energy | 79.1 | decent | 54d |
+| 1 | HCI | Financials | 80.3 | strong | 56d |
+| 2 | RNR | Financials | 80.2 | strong | 54d |
+| 3 | PR | Energy | 80.1 | strong | 55d |
+| 4 | VLO | Energy | 79.7 | decent | 42d |
+| 5 | PSX | Energy | 79.7 | decent | 49d |
+| 6 | CF | Materials | 78.7 | decent | 55d |
 | 7 | MATX | Industrials | 78.6 | decent | 55d |
-| 8 | LTC | Real Estate | 78.2 | decent | 54d |
-| 9 | INSW | Energy | 77.3 | decent | 56d |
-| 10 | VZ | Communication Services | 77.2 | decent | 40d |
+| 8 | LTC | Real Estate | 78.6 | decent | 54d |
+| 9 | APA | Energy | 78.6 | decent | 55d |
+| 10 | MPC | Energy | 78.5 | decent | 54d |
 
-**vs prev live run (2026-09-09):** entered [HCI, INSW, LTC, MATX, MPC, PR, PSX, RNR, VLO, VZ] · exited [ACT, ADUS, APA, AVTR, CF, COP, CRBG, DE, DINO, EXPD]
-**Movers:** ↑ TRMK +18.4, RDDT +15.6, PM +15.2, HAS +13.5, HTH +11.7  ↓ SMH -30.6, ORCL -21.7, TER -20.4, LRCX -19.9, LEU -19.9
+**vs prev live run (2026-09-09):** entered [HCI, LTC, MATX, MPC, PR, PSX, RNR, VLO] · exited [ACT, ADUS, AVTR, COP, CRBG, DE, DINO, EXPD]
+**Movers:** ↑ APP +33.1, CRUS +32.1, EIX +27.0, CMCSA +26.7, BAH +25.9  ↓ SMH -30.5, CVNA -28.6, BOX -27.4, COIN -25.6, BTSG -22.9
 
 ### 2. Predictions that came due today
 
 **Live predictions** (v0.5_expanded_universe)
 
-- **2026-09-02 · v0.5_expanded_universe → 5d** (n=940): Strong n/a (n=4) vs Weak 43.9% (n=561)
+- **2026-09-02 · v0.5_expanded_universe → 5d** (n=1514): Strong n/a (n=5) vs Weak 45.3% (n=878)
 
 **Simulated — same model, backfilled over history**
 
-- **2026-03-19 · v0.5_expanded_universe → 120d** (n=314): Strong n/a (n=4) vs Weak 40.1% (n=167)
-- **2026-08-12 · v0.5_expanded_universe → 20d** (n=938): Strong n/a (n=11) vs Weak 49.6% (n=397)
-- **2026-06-15 · v0.5_expanded_universe → 60d** (n=314): Strong n/a (n=3) vs Weak 51.8% (n=137)
+- **2026-03-19 · v0.5_expanded_universe → 120d** (n=515): Strong n/a (n=6) vs Weak 40.7% (n=273)
+- **2026-08-12 · v0.5_expanded_universe → 20d** (n=1512): Strong n/a (n=17) vs Weak 48.7% (n=630)
+- **2026-06-15 · v0.5_expanded_universe → 60d** (n=515): Strong n/a (n=4) vs Weak 54.8% (n=228)
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -47,10 +47,10 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | 34.8% (n=23) | 47.7% (n=7249) | 48.6% (n=2211) | 49.8% (n=239781) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.0% (n=6056) | 47.9% (n=221097) |
-| 60d | n/a (n=0) | n/a (n=0) | 48.5% (n=7056) | 44.9% (n=193291) |
-| 120d | n/a (n=0) | n/a (n=0) | 49.6% (n=6992) | 40.6% (n=147633) |
+| 5d | 37.5% (n=24) | 47.7% (n=7566) | 48.6% (n=2211) | 49.8% (n=239781) |
+| 20d | n/a (n=0) | n/a (n=0) | 48.0% (n=6062) | 47.9% (n=221330) |
+| 60d | n/a (n=0) | n/a (n=0) | 48.5% (n=7058) | 44.9% (n=193498) |
+| 120d | n/a (n=0) | n/a (n=0) | 49.6% (n=6997) | 40.6% (n=147900) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -60,19 +60,19 @@ _Backfill is survivorship-flattered: today's S&P constituents, delisted names ab
 **4a. Fundamental-factor IC** — do value/quality earn their weight?
 
 _Live only — 15 live trading day(s) since 2026-08-20. The genuine out-of-sample read, and the one 4a exists for._
-  - value_component: 5d +0.109 (n=12981)
-  - quality_component: 5d -0.039 (n=12973)
-  - short_interest_component: 5d +0.052 (n=12883)
+  - value_component: 5d +0.107 (n=13557)
+  - quality_component: 5d -0.039 (n=13548)
+  - short_interest_component: 5d +0.054 (n=13455)
 
 _Full panel — includes backfilled rows. Large sample, but the weights were chosen on this data, so treat it as in-sample and flattering._
-  - value_component: 5d +0.012 (n=764696), 20d +0.023 (n=743700), 60d +0.041 (n=684902), 120d +0.063 (n=596443)
-  - quality_component: 5d -0.009 (n=770075), 20d -0.017 (n=749007), 60d -0.032 (n=689624), 120d -0.044 (n=600317)
-  - short_interest_component: 5d +0.052 (n=12883)
+  - value_component: 5d +0.012 (n=765272), 20d +0.023 (n=744265), 60d +0.041 (n=685345), 120d +0.063 (n=596886)
+  - quality_component: 5d -0.009 (n=770650), 20d -0.017 (n=749577), 60d -0.032 (n=690070), 120d -0.044 (n=600762)
+  - short_interest_component: 5d +0.054 (n=13455)
 
 **4b. Drift on established components** (recent-window IC vs full history)
-  - **DRIFT** momentum_component_20d@5d: -0.005 → -0.059 (recent n=14598)
-  - **DRIFT** long_momentum_component@5d: +0.000 → +0.052 (recent n=14580)
-  - **DRIFT** relative_strength_component_20d@5d: -0.004 → -0.065 (recent n=14598)
+  - **DRIFT** momentum_component_20d@5d: -0.006 → -0.064 (recent n=15173)
+  - **DRIFT** long_momentum_component@5d: +0.000 → +0.059 (recent n=15154)
+  - **DRIFT** relative_strength_component_20d@5d: -0.004 → -0.069 (recent n=15173)
 
 ---
 

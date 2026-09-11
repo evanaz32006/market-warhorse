@@ -1,6 +1,123 @@
 # SESSION_STATE.md
 
-Last updated: 2026-09-10
+Last updated: 2026-09-11
+
+---
+
+## SEC 8-K material events — INGESTED and MEASURED (2026-09-11)
+
+`src/filings.py` + `tests/test_filings.py` (14). `python app.py --ingest-filings`, then
+`--research events`. **Report only.** 65,549 filings across 1,498 of 1,509 names, 2023-12-01 ..
+2026-09-10.
+
+**Source:** the per-company submissions API, because it carries the 8-K ITEM CODES. The quarterly
+bulk index lists filings but not items, and the item code is the entire signal — a 5.07
+(annual-meeting vote) and a 4.02 (previously issued financials can no longer be relied upon) are
+both "an 8-K". Unlike the Form 4 bulk datasets this source is CURRENT (through today), so a feature
+built on it could serve a nightly run without a second pipeline.
+
+**The one-day leak this could have had.** SEC stamps an 8-K accepted at 16:35 ET with THAT DAY's
+`filingDate`, but the market shut at 16:00. `effective_date` rolls anything accepted at or after the
+close to the next session, and rolls weekend/holiday filings forward. Small, invisible in output,
+and exactly the size that makes a short-horizon event study look real.
+
+**Routine is not material.** Item 9.01 is an attachment notice bolted onto most other items; 5.07 is
+the annual shareholder vote. Features count six item GROUPS separately rather than pooling them —
+the same discipline as splitting insider code P from grants.
+
+### The result: nothing, and THIS null is informative
+
+108 cells (6 groups x 3 windows x 6 horizons), 105 testable. **3 nominally significant against 5.2
+expected by chance — fewer than chance would produce. Zero survive BH-FDR.**
+
+The pre-registered reading said 8-K news is incorporated within hours, so a daily-resolution feature
+should find little. That is exactly what happened, which is a correctness signal for the harness
+rather than a disappointment.
+
+The most extreme cells, all failing correction:
+
+| group | window | h | spread | hit | t | eff n | MDE |
+|---|---|---|---|---|---|---|---|
+| earnings (2.02) | 5d | 1 | **-0.054%** | 48.2% | -2.13 | 541 | 0.071% |
+| earnings (2.02) | 5d | 2 | -0.096% | 48.1% | -2.04 | 270 | 0.132% |
+| redflag (4.02/2.06/1.03/3.01) | 5d | 1 | **-0.40%** | 43.7% | -1.77 | 48 | 0.635% |
+
+**Why this null is worth more than the insider null.** The Form 4 study could not have detected its
+own hypothesis: MDE 0.039-0.062 in IC terms at 60-120d against a literature effect of ~0.02-0.03.
+Here the sample HAS power where the hypothesis lives — 541 effective independent observations at
+h=1, MDE 0.07%. **We could have seen a tradeable effect and did not.** That is a real answer, not a
+shrug.
+
+The one cell that stays open is `redflag`: only 48 qualifying days and 167 event-name-days, MDE
+0.635% against an observed -0.40%. Right sign, right story, too rare to confirm. Rare severe events
+need years, not names.
+
+Even the significant-looking earnings cell is not tradeable: -0.054% is the same order as the
+round-trip cost of the trade.
+
+### Coverage notes
+
+Four names returned nothing, all correctly: **ARM and TSM are foreign private issuers** (they file
+6-K/20-F, never 8-K or 10-Q), and **OZK and PFBC are state banks with no holding company**, which
+file their periodic reports with the FDIC rather than the SEC. Their EDGAR presence is only
+13F-HR/13G. Any 8-K feature is permanently null for these four — correct behaviour, but a coverage
+asymmetry to remember.
+
+---
+
+## CIK MIS-MAPPING: two live names were pointed at the wrong company (2026-09-11)
+
+Found while chasing the four zero-filing names above. **This is a data-integrity bug in the live
+model's mapping, and it was one refactor away from producing confidently wrong numbers.**
+
+`_norm_ticker` strips punctuation so `BRK-B` can find `BRKB` — a deliberate earlier fix. But SEC's
+`company_tickers.json` also lists **preferred-share tickers**:
+
+| SEC ticker | normalizes to | company | CIK |
+|---|---|---|---|
+| `BCPC` | BCPC | **Balchem** | 0000009326 |
+| `BC-PC` | BCPC | Brunswick preferred series C | 0000014930 |
+| `TPC` | TPC | **Tutor Perini** | 0000077543 |
+| `T-PC` | TPC | AT&T preferred series C | 0000732717 |
+
+`build_cik_map` assigned into a flat dict, so whichever entry came last won. Result: **Balchem was
+mapped to Brunswick's CIK, and Tutor Perini to AT&T's.** Two of four such collisions in SEC's entire
+table land in our universe.
+
+**Why it produced no wrong number — pure luck.** `edgar_facts` is written with a `ticker` column and
+read back BY TICKER (`storage.load_edgar_facts(ticker=...)`), while ingest is deduplicated BY CIK.
+Brunswick and AT&T had already been ingested under their own tickers, so BCPC/TPC were skipped as
+"fresh" and no rows exist under those tickers. The resolver therefore returns nothing and the
+fundamentals are NULL. **A future cleanup keying the read on CIK — the obvious refactor — would have
+activated it instantly and started scoring Balchem on Brunswick's books.**
+
+Fixed: exact ticker match wins; a normalized match is used only when every candidate resolves to the
+SAME CIK; a genuinely ambiguous one is REFUSED and logged loudly rather than guessed. Four tests,
+including the exact BCPC/TPC case. Safe to land now because `build_cik_map` is never called from the
+nightly path — only from an explicit EDGAR ingest — so nothing in the live model changes until a
+deliberate re-ingest.
+
+### The related open item, NOT fixed (it is a fork)
+
+Reading facts by TICKER also breaks **dual-class and shared-CIK siblings**. The CIK is correct, but
+the facts are stored under whichever ticker the ingest loop happened to be on, so the sibling
+resolves nothing:
+
+| ticker | shares CIK with | facts under our ticker | profit_margin NULL |
+|---|---|---|---|
+| GOOG | GOOGL | 0 | 538 of 553 |
+| FOX | FOXA | 0 | 539 of 553 |
+| UAA | UA | 0 | 500 of 515 |
+| CENTA | CENT | 0 | 500 of 514 |
+| VMRK | EQR | 0 | 500 of 515 |
+
+So **five live names carry null value/quality components for no real reason** — the data is sitting
+in the database under a sibling ticker. GOOG and GOOGL are the same company and currently get
+different scores purely because of a storage key.
+
+The fix (read by CIK) is one line, but it **changes fundamentals for ~7 names, which changes their
+scores** — a new `model_version` under CLAUDE.md #5, not an edit to v0.5. And it MUST land after the
+mapping fix above, never before, or it activates the Balchem/Brunswick bug. Left for the owner.
 
 ---
 

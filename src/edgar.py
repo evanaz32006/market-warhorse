@@ -99,27 +99,50 @@ def build_cik_map(tickers, sector_by_ticker, db_path=storage.DEFAULT_DB_PATH):
     Every non-ETF ticker that fails to map is LOGGED (never silently dropped). Returns a summary dict."""
     storage.init_db(db_path)
     raw = _http_get_json(EDGAR["company_tickers_url"])
-    by_norm = {}
+    by_exact, norm_owners = {}, {}
     if raw:
         for entry in raw.values():
             tkr, cik = entry.get("ticker"), entry.get("cik_str")
             if tkr and cik is not None:
-                by_norm[_norm_ticker(tkr)] = f"{int(cik):010d}"
+                cik10 = f"{int(cik):010d}"
+                by_exact.setdefault(str(tkr).upper(), cik10)
+                norm_owners.setdefault(_norm_ticker(tkr), {})[str(tkr).upper()] = cik10
     else:
         print("[edgar] WARNING: could not fetch company_tickers.json — no tickers mapped this run")
 
-    rows, mapped, etfs, unmapped = [], 0, 0, []
+    # Normalizing punctuation away is what lets BRK-B find BRKB — but it also makes PREFERRED-share
+    # tickers collide with ordinary common stock. SEC lists "BC-PC" (Brunswick preferred series C),
+    # which normalizes to BCPC and collided with Balchem; and "T-PC" (AT&T preferred C), which
+    # normalized to TPC and collided with Tutor Perini. The old code assigned into a flat dict, so
+    # whichever entry came last silently won, and BALCHEM WAS MAPPED TO BRUNSWICK'S CIK while TUTOR
+    # PERINI WAS MAPPED TO AT&T'S.
+    #
+    # That produced no error and no wrong number — only because facts are READ BACK BY TICKER and
+    # ingest is deduplicated by CIK, so the mis-mapped names simply ingested nothing and resolved to
+    # NULL. A future "cleanup" that keys the read on CIK instead would have activated it instantly
+    # and started scoring Balchem on Brunswick's financials. So: exact match wins, a normalized
+    # match is used only when it is UNAMBIGUOUS, and an ambiguous one is refused and logged.
+    by_norm = {k: next(iter(v.values())) for k, v in norm_owners.items()
+               if len(set(v.values())) == 1}
+    ambiguous = {k: v for k, v in norm_owners.items() if len(set(v.values())) > 1}
+
+    rows, mapped, etfs, unmapped, collisions = [], 0, 0, [], []
     for t in tickers:
         is_etf = 1 if sector_by_ticker.get(t) == ETF_SECTOR_LABEL else 0
         if is_etf:
             etfs += 1
             rows.append({"ticker": t, "cik": None, "is_etf": 1, "mapped_ok": 0, "checked_at": _now_iso()})
             continue
-        cik = by_norm.get(_norm_ticker(t))
+        # Exact FIRST. Our "BCPC" is SEC's "BCPC" (Balchem) verbatim; only fall through to the
+        # punctuation-insensitive match for genuine spelling differences like BRK-B vs BRKB.
+        cik = by_exact.get(str(t).upper()) or by_norm.get(_norm_ticker(t))
         if cik:
             mapped += 1
             rows.append({"ticker": t, "cik": cik, "is_etf": 0, "mapped_ok": 1, "checked_at": _now_iso()})
         else:
+            norm = _norm_ticker(t)
+            if norm in ambiguous:
+                collisions.append((t, ambiguous[norm]))
             unmapped.append(t)
             rows.append({"ticker": t, "cik": None, "is_etf": 0, "mapped_ok": 0, "checked_at": _now_iso()})
 
@@ -127,7 +150,11 @@ def build_cik_map(tickers, sector_by_ticker, db_path=storage.DEFAULT_DB_PATH):
     print(f"[edgar] CIK map: {mapped} mapped, {etfs} ETFs excluded, {len(unmapped)} UNMAPPED")
     if unmapped:
         print(f"[edgar] UNMAPPED tickers (no company fundamentals will be available): {sorted(unmapped)}")
-    return {"mapped": mapped, "etfs": etfs, "unmapped": unmapped}
+    for ticker, owners in collisions:
+        print(f"[edgar] AMBIGUOUS ticker {ticker}: normalizes the same as {sorted(owners)} — "
+              f"REFUSED rather than guessed (a wrong CIK scores one company on another's books)")
+    return {"mapped": mapped, "etfs": etfs, "unmapped": unmapped,
+            "ambiguous": [t for t, _ in collisions]}
 
 
 # ---------------------------------------------------------------------------

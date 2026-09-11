@@ -366,3 +366,76 @@ def test_facts_index_includes_requested_extra_tags():
 
     withEPS = edgar.build_facts_index(["T"], db_path=db, extra_tags=edgar.EPS_TAGS)
     assert "EarningsPerShareDiluted" in {f["tag"] for f in withEPS["T"][0]}
+
+
+# ---------------------------------------------------------------------------
+# Ticker -> CIK collisions (found live on 2026-09-11)
+# ---------------------------------------------------------------------------
+
+def _fake_sec_table(entries):
+    """SEC's company_tickers.json shape: {"0": {"cik_str": int, "ticker": str, "title": str}, ...}"""
+    return {str(i): {"cik_str": cik, "ticker": t, "title": t}
+            for i, (t, cik) in enumerate(entries)}
+
+
+def test_a_preferred_share_ticker_cannot_steal_a_common_stocks_cik(monkeypatch, tmp_path):
+    """THE regression test, from two real live mis-mappings.
+
+    Normalizing punctuation away is what lets BRK-B find BRKB. But SEC also lists PREFERRED shares:
+    "BC-PC" (Brunswick preferred series C) normalizes to BCPC and collided with Balchem, and "T-PC"
+    (AT&T preferred C) normalizes to TPC and collided with Tutor Perini. The old code wrote into a
+    flat dict, so whichever entry came last silently won — **Balchem was mapped to Brunswick's CIK
+    and Tutor Perini to AT&T's.**
+
+    It produced no error and no wrong number, but only by luck: facts are read back by TICKER and
+    ingest dedupes by CIK, so the mis-mapped names ingested nothing and resolved to NULL. A future
+    refactor keying the read on CIK would have activated it instantly and scored Balchem on
+    Brunswick's books."""
+    db = str(tmp_path / "cik.db")
+    table = _fake_sec_table([
+        ("BCPC", 9326),      # Balchem, common
+        ("BC-PC", 14930),    # Brunswick PREFERRED — normalizes to BCPC too
+        ("TPC", 77543),      # Tutor Perini, common
+        ("T-PC", 732717),    # AT&T PREFERRED — normalizes to TPC too
+    ])
+    monkeypatch.setattr(edgar, "_http_get_json", lambda url: table)
+    edgar.build_cik_map(["BCPC", "TPC"], {"BCPC": "Materials", "TPC": "Industrials"}, db_path=db)
+
+    m = storage.load_cik_map(db_path=db)
+    assert m["BCPC"]["cik"] == "0000009326", "Balchem must not inherit Brunswick's CIK"
+    assert m["TPC"]["cik"] == "0000077543", "Tutor Perini must not inherit AT&T's CIK"
+
+
+def test_punctuation_insensitive_matching_still_works(monkeypatch, tmp_path):
+    """The counterweight: the normalization exists for a reason. Our watchlist writes BRK-B while
+    SEC may write BRK.B, and that must still resolve when nothing else competes for the name."""
+    db = str(tmp_path / "cik2.db")
+    table = _fake_sec_table([("BRK.B", 1067983), ("AAPL", 320193)])
+    monkeypatch.setattr(edgar, "_http_get_json", lambda url: table)
+    edgar.build_cik_map(["BRK-B", "AAPL"], {"BRK-B": "Financials", "AAPL": "Information Technology"},
+                        db_path=db)
+    m = storage.load_cik_map(db_path=db)
+    assert m["BRK-B"]["cik"] == "0001067983"
+    assert m["AAPL"]["cik"] == "0000320193"
+
+
+def test_a_genuinely_ambiguous_ticker_is_refused_not_guessed(monkeypatch, tmp_path):
+    """When only the punctuation-stripped forms match and they point at DIFFERENT companies, there
+    is no right answer. Refusing leaves fundamentals NULL, which is recoverable; guessing scores one
+    company on another's financials, which is not detectable downstream."""
+    db = str(tmp_path / "cik3.db")
+    table = _fake_sec_table([("XY-ZA", 111), ("XY.ZA", 222)])   # neither matches "XYZA" exactly
+    monkeypatch.setattr(edgar, "_http_get_json", lambda url: table)
+    summary = edgar.build_cik_map(["XYZA"], {"XYZA": "Industrials"}, db_path=db)
+    assert storage.load_cik_map(db_path=db)["XYZA"]["cik"] is None
+    assert "XYZA" in summary["ambiguous"]
+
+
+def test_an_unambiguous_normalized_collision_is_still_mapped(monkeypatch, tmp_path):
+    """Two SEC spellings of the SAME company (same CIK) are not a conflict — that is just the
+    share-class quirk, and refusing there would lose real coverage."""
+    db = str(tmp_path / "cik4.db")
+    table = _fake_sec_table([("XY-ZA", 111), ("XY.ZA", 111)])
+    monkeypatch.setattr(edgar, "_http_get_json", lambda url: table)
+    edgar.build_cik_map(["XYZA"], {"XYZA": "Industrials"}, db_path=db)
+    assert storage.load_cik_map(db_path=db)["XYZA"]["cik"] == "0000000111"
