@@ -4,6 +4,78 @@ _Machine-appended after every run. Regenerated from the `journal` table; do not 
 
 ---
 
+## 2026-09-11 — v0.5_expanded_universe (live)
+
+_Run: scored 1521 tickers in 2325.0s · fetch fresh=1521 / cached=6 / failed=1 (CWEN-A)_
+_Warnings: 1 ticker(s) failed price fetch; 7 ticker(s) skipped (stale / no data)_
+
+### 1. Today's Rankings
+
+_Research ranking, NOT a buy recommendation._
+
+| # | Ticker | Sector | score_20d | Label | Earnings in |
+|---|--------|--------|-----------|-------|-------------|
+| 1 | PR | Energy | 80.2 | strong | 52d |
+| 2 | VZ | Communication Services | 79.5 | decent | 37d |
+| 3 | T | Communication Services | 79.2 | decent | 38d |
+| 4 | APA | Energy | 79.2 | decent | 52d |
+| 5 | VLO | Energy | 79.0 | decent | 39d |
+| 6 | CF | Materials | 78.9 | decent | 52d |
+| 7 | MATX | Industrials | 78.8 | decent | 52d |
+| 8 | PSX | Energy | 78.6 | decent | 46d |
+| 9 | LTC | Real Estate | 78.4 | decent | 51d |
+| 10 | TRV | Financials | 78.3 | decent | 32d |
+
+**vs prev live run (2026-09-10):** entered [T, TRV, VZ] · exited [HCI, MPC, RNR]
+**Movers:** ↑ KR +23.5, FIZZ +20.1, EME +19.4, M +19.4, FIX +18.5  ↓ PJT -22.1, JEF -21.7, STX -15.5, XPEL -15.2, HTH -13.8
+
+### 2. Predictions that came due today
+
+**Live predictions** (v0.5_expanded_universe)
+
+- Scored **2026-09-03** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 46.5% (n=834).
+
+**Simulated — same model, backfilled over history**
+
+- Scored **2026-03-20** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 42.5% (n=287).
+- Scored **2026-08-13** · v0.5_expanded_universe, graded **20d** later — 1513 stocks. Top-rated: only 16 names, too few to score (needs 20). Bottom-rated: 46.7% (n=615).
+- Scored **2026-06-16** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 55.3% (n=228).
+
+_Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
+
+### 3. Running scoreboard — cumulative Strong vs Weak hit rate
+
+| Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
+|---------|-------------|-----------|-----------------|---------------|
+| 5d | 33.3% (n=30) | 47.6% (n=8400) | 48.6% (n=2211) | 49.8% (n=239781) |
+| 20d | no names in this bucket | no names in this bucket | 48.0% (n=6078) | 47.9% (n=221945) |
+| 60d | no names in this bucket | no names in this bucket | 48.5% (n=7076) | 45.0% (n=194153) |
+| 120d | no names in this bucket | no names in this bucket | 49.6% (n=7010) | 40.7% (n=148773) |
+
+_Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
+_Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
+
+### 4. Live validation tracker
+
+**4a. Fundamental-factor IC** — do value/quality earn their weight?
+
+_Live only — 16 live trading day(s) since 2026-08-20. The genuine out-of-sample read, and the one 4a exists for._
+  - value_component: 5d +0.099 (n=15063)
+  - quality_component: 5d -0.036 (n=15053)
+  - short_interest_component: 5d +0.061 (n=14950)
+
+_Full panel — includes backfilled rows. Large sample, but the weights were chosen on this data, so treat it as in-sample and flattering._
+  - value_component: 5d +0.013 (n=766778), 20d +0.023 (n=745738), 60d +0.041 (n=686814), 120d +0.063 (n=598354)
+  - quality_component: 5d -0.009 (n=772155), 20d -0.017 (n=751065), 60d -0.032 (n=691553), 120d -0.044 (n=602243)
+  - short_interest_component: 5d +0.061 (n=14950)
+
+**4b. Drift on established components** (recent-window IC vs full history)
+  - **DRIFT** momentum_component_20d@5d: -0.006 → -0.077 (recent n=16690)
+  - **DRIFT** long_momentum_component@5d: +0.001 → +0.071 (recent n=16669)
+  - **DRIFT** relative_strength_component_20d@5d: -0.004 → -0.083 (recent n=16690)
+
+---
+
 ## 2026-09-10 — v0.5_expanded_universe (live)
 
 _Run: scored 1521 tickers in 1570.7s · fetch fresh=576 / cached=951 / failed=1 (CWEN-A)_
@@ -33,13 +105,13 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- **2026-09-02 · v0.5_expanded_universe → 5d** (n=1514): Strong n/a (n=5) vs Weak 45.3% (n=878)
+- Scored **2026-09-02** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 45.3% (n=878).
 
 **Simulated — same model, backfilled over history**
 
-- **2026-03-19 · v0.5_expanded_universe → 120d** (n=515): Strong n/a (n=6) vs Weak 40.7% (n=273)
-- **2026-08-12 · v0.5_expanded_universe → 20d** (n=1512): Strong n/a (n=17) vs Weak 48.7% (n=630)
-- **2026-06-15 · v0.5_expanded_universe → 60d** (n=515): Strong n/a (n=4) vs Weak 54.8% (n=228)
+- Scored **2026-03-19** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 40.7% (n=273).
+- Scored **2026-08-12** · v0.5_expanded_universe, graded **20d** later — 1512 stocks. Top-rated: only 17 names, too few to score (needs 20). Bottom-rated: 48.7% (n=630).
+- Scored **2026-06-15** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 54.8% (n=228).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -48,9 +120,9 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 37.5% (n=24) | 47.7% (n=7566) | 48.6% (n=2211) | 49.8% (n=239781) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.0% (n=6062) | 47.9% (n=221330) |
-| 60d | n/a (n=0) | n/a (n=0) | 48.5% (n=7058) | 44.9% (n=193498) |
-| 120d | n/a (n=0) | n/a (n=0) | 49.6% (n=6997) | 40.6% (n=147900) |
+| 20d | no names in this bucket | no names in this bucket | 48.0% (n=6062) | 47.9% (n=221330) |
+| 60d | no names in this bucket | no names in this bucket | 48.5% (n=7058) | 44.9% (n=193498) |
+| 120d | no names in this bucket | no names in this bucket | 49.6% (n=6997) | 40.6% (n=147900) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -106,13 +178,13 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- **2026-09-01 · v0.5_expanded_universe → 5d** (n=1514): Strong n/a (n=4) vs Weak 47.8% (n=913)
+- Scored **2026-09-01** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 47.8% (n=913).
 
 **Simulated — same model, backfilled over history**
 
-- **2026-03-18 · v0.5_expanded_universe → 120d** (n=515): Strong n/a (n=4) vs Weak 40.8% (n=272)
-- **2026-08-11 · v0.5_expanded_universe → 20d** (n=1511): Strong n/a (n=15) vs Weak 51.8% (n=626)
-- **2026-06-12 · v0.5_expanded_universe → 60d** (n=515): Strong n/a (n=5) vs Weak 54.5% (n=231)
+- Scored **2026-03-18** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 40.8% (n=272).
+- Scored **2026-08-11** · v0.5_expanded_universe, graded **20d** later — 1511 stocks. Top-rated: only 15 names, too few to score (needs 20). Bottom-rated: 51.8% (n=626).
+- Scored **2026-06-12** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 54.5% (n=231).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -120,10 +192,10 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=19) | 48.1% (n=6688) | 48.6% (n=2211) | 49.8% (n=239781) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.0% (n=6045) | 47.9% (n=220700) |
-| 60d | n/a (n=0) | n/a (n=0) | 48.5% (n=7053) | 44.9% (n=193154) |
-| 120d | n/a (n=0) | n/a (n=0) | 49.6% (n=6988) | 40.6% (n=147466) |
+| 5d | only 19 names, too few to score (needs 20) | 48.1% (n=6688) | 48.6% (n=2211) | 49.8% (n=239781) |
+| 20d | no names in this bucket | no names in this bucket | 48.0% (n=6045) | 47.9% (n=220700) |
+| 60d | no names in this bucket | no names in this bucket | 48.5% (n=7053) | 44.9% (n=193154) |
+| 120d | no names in this bucket | no names in this bucket | 49.6% (n=6988) | 40.6% (n=147466) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -178,13 +250,13 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- **2026-08-31 · v0.5_expanded_universe → 5d** (n=1514): Strong n/a (n=1) vs Weak 47.0% (n=885)
+- Scored **2026-08-31** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 47.0% (n=885).
 
 **Simulated — same model, backfilled over history**
 
-- **2026-03-17 · v0.5_expanded_universe → 120d** (n=515): Strong n/a (n=7) vs Weak 43.5% (n=262)
-- **2026-08-10 · v0.5_expanded_universe → 20d** (n=1511): Strong n/a (n=14) vs Weak 49.7% (n=638)
-- **2026-06-11 · v0.5_expanded_universe → 60d** (n=515): Strong n/a (n=3) vs Weak 52.0% (n=248)
+- Scored **2026-03-17** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 7 names, too few to score (needs 20). Bottom-rated: 43.5% (n=262).
+- Scored **2026-08-10** · v0.5_expanded_universe, graded **20d** later — 1511 stocks. Top-rated: only 14 names, too few to score (needs 20). Bottom-rated: 49.7% (n=638).
+- Scored **2026-06-11** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 52.0% (n=248).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -192,10 +264,10 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=15) | 48.1% (n=5775) | 48.6% (n=2211) | 49.8% (n=239781) |
-| 20d | n/a (n=0) | n/a (n=0) | 47.9% (n=6030) | 47.9% (n=220074) |
-| 60d | n/a (n=0) | n/a (n=0) | 48.6% (n=7020) | 44.8% (n=192164) |
-| 120d | n/a (n=0) | n/a (n=0) | 49.7% (n=6967) | 40.6% (n=146195) |
+| 5d | only 15 names, too few to score (needs 20) | 48.1% (n=5775) | 48.6% (n=2211) | 49.8% (n=239781) |
+| 20d | no names in this bucket | no names in this bucket | 47.9% (n=6030) | 47.9% (n=220074) |
+| 60d | no names in this bucket | no names in this bucket | 48.6% (n=7020) | 44.8% (n=192164) |
+| 120d | no names in this bucket | no names in this bucket | 49.7% (n=6967) | 40.6% (n=146195) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -248,13 +320,13 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- **2026-08-28 · v0.5_expanded_universe → 5d** (n=1514): Strong n/a (n=2) vs Weak 50.4% (n=834)
+- Scored **2026-08-28** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 50.4% (n=834).
 
 **Simulated — same model, backfilled over history**
 
-- **2026-03-16 · v0.5_expanded_universe → 120d** (n=515): Strong n/a (n=6) vs Weak 47.9% (n=261)
-- **2026-08-07 · v0.5_expanded_universe → 20d** (n=1511): Strong n/a (n=15) vs Weak 45.1% (n=599)
-- **2026-06-10 · v0.5_expanded_universe → 60d** (n=515): Strong n/a (n=2) vs Weak 53.6% (n=261)
+- Scored **2026-03-16** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 47.9% (n=261).
+- Scored **2026-08-07** · v0.5_expanded_universe, graded **20d** later — 1511 stocks. Top-rated: only 15 names, too few to score (needs 20). Bottom-rated: 45.1% (n=599).
+- Scored **2026-06-10** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 53.6% (n=261).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -262,10 +334,10 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=14) | 48.3% (n=4890) | 48.6% (n=2211) | 49.8% (n=239781) |
-| 20d | n/a (n=0) | n/a (n=0) | 47.9% (n=6016) | 47.9% (n=219436) |
-| 60d | n/a (n=0) | n/a (n=0) | 48.7% (n=7004) | 44.8% (n=191461) |
-| 120d | n/a (n=0) | n/a (n=0) | 49.7% (n=6952) | 40.5% (n=145353) |
+| 5d | only 14 names, too few to score (needs 20) | 48.3% (n=4890) | 48.6% (n=2211) | 49.8% (n=239781) |
+| 20d | no names in this bucket | no names in this bucket | 47.9% (n=6016) | 47.9% (n=219436) |
+| 60d | no names in this bucket | no names in this bucket | 48.7% (n=7004) | 44.8% (n=191461) |
+| 120d | no names in this bucket | no names in this bucket | 49.7% (n=6952) | 40.5% (n=145353) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -318,13 +390,13 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- **2026-08-27 · v0.5_expanded_universe → 5d** (n=1514): Strong n/a (n=0) vs Weak 50.4% (n=838)
+- Scored **2026-08-27** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: no names in this bucket. Bottom-rated: 50.4% (n=838).
 
 **Simulated — same model, backfilled over history**
 
-- **2026-03-13 · v0.5_expanded_universe → 120d** (n=515): Strong n/a (n=5) vs Weak 46.6% (n=268)
-- **2026-08-06 · v0.5_expanded_universe → 20d** (n=1511): Strong 50.0% (n=20) vs Weak 45.5% (n=624)
-- **2026-06-09 · v0.5_expanded_universe → 60d** (n=515): Strong n/a (n=4) vs Weak 54.2% (n=249)
+- Scored **2026-03-13** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 46.6% (n=268).
+- Scored **2026-08-06** · v0.5_expanded_universe, graded **20d** later — 1511 stocks. Top-rated: 50.0% (n=20). Bottom-rated: 45.5% (n=624).
+- Scored **2026-06-09** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 54.2% (n=249).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -332,10 +404,10 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=12) | 47.9% (n=4056) | 48.6% (n=2211) | 49.8% (n=239781) |
-| 20d | n/a (n=0) | n/a (n=0) | 47.9% (n=6001) | 47.9% (n=218837) |
-| 60d | n/a (n=0) | n/a (n=0) | 48.7% (n=6987) | 44.8% (n=190757) |
-| 120d | n/a (n=0) | n/a (n=0) | 49.7% (n=6939) | 40.5% (n=144527) |
+| 5d | only 12 names, too few to score (needs 20) | 47.9% (n=4056) | 48.6% (n=2211) | 49.8% (n=239781) |
+| 20d | no names in this bucket | no names in this bucket | 47.9% (n=6001) | 47.9% (n=218837) |
+| 60d | no names in this bucket | no names in this bucket | 48.7% (n=6987) | 44.8% (n=190757) |
+| 120d | no names in this bucket | no names in this bucket | 49.7% (n=6939) | 40.5% (n=144527) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -389,13 +461,13 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- **2026-08-26 · v0.5_expanded_universe → 5d** (n=1515): Strong n/a (n=0) vs Weak 47.1% (n=805)
+- Scored **2026-08-26** · v0.5_expanded_universe, graded **5d** later — 1515 stocks. Top-rated: no names in this bucket. Bottom-rated: 47.1% (n=805).
 
 **Simulated — same model, backfilled over history**
 
-- **2026-03-12 · v0.5_expanded_universe → 120d** (n=515): Strong n/a (n=3) vs Weak 46.3% (n=268)
-- **2026-08-05 · v0.5_expanded_universe → 20d** (n=1511): Strong n/a (n=15) vs Weak 44.5% (n=582)
-- **2026-06-08 · v0.5_expanded_universe → 60d** (n=515): Strong n/a (n=4) vs Weak 56.5% (n=262)
+- Scored **2026-03-12** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 46.3% (n=268).
+- Scored **2026-08-05** · v0.5_expanded_universe, graded **20d** later — 1511 stocks. Top-rated: only 15 names, too few to score (needs 20). Bottom-rated: 44.5% (n=582).
+- Scored **2026-06-08** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 56.5% (n=262).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -403,10 +475,10 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=12) | 47.2% (n=3218) | 48.6% (n=2211) | 49.8% (n=239781) |
-| 20d | n/a (n=0) | n/a (n=0) | 47.9% (n=5981) | 47.9% (n=218213) |
-| 60d | n/a (n=0) | n/a (n=0) | 48.8% (n=6965) | 44.7% (n=190051) |
-| 120d | n/a (n=0) | n/a (n=0) | 49.7% (n=6925) | 40.4% (n=143715) |
+| 5d | only 12 names, too few to score (needs 20) | 47.2% (n=3218) | 48.6% (n=2211) | 49.8% (n=239781) |
+| 20d | no names in this bucket | no names in this bucket | 47.9% (n=5981) | 47.9% (n=218213) |
+| 60d | no names in this bucket | no names in this bucket | 48.8% (n=6965) | 44.7% (n=190051) |
+| 120d | no names in this bucket | no names in this bucket | 49.7% (n=6925) | 40.4% (n=143715) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -459,13 +531,13 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- **2026-08-25 · v0.5_expanded_universe → 5d** (n=1515): Strong n/a (n=3) vs Weak 48.6% (n=797)
+- Scored **2026-08-25** · v0.5_expanded_universe, graded **5d** later — 1515 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 48.6% (n=797).
 
 **Simulated — same model, backfilled over history**
 
-- **2026-03-11 · v0.5_expanded_universe → 120d** (n=515): Strong n/a (n=4) vs Weak 45.5% (n=255)
-- **2026-08-04 · v0.5_expanded_universe → 20d** (n=1511): Strong n/a (n=15) vs Weak 45.6% (n=559)
-- **2026-06-05 · v0.5_expanded_universe → 60d** (n=515): Strong n/a (n=4) vs Weak 58.8% (n=250)
+- Scored **2026-03-11** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 45.5% (n=255).
+- Scored **2026-08-04** · v0.5_expanded_universe, graded **20d** later — 1511 stocks. Top-rated: only 15 names, too few to score (needs 20). Bottom-rated: 45.6% (n=559).
+- Scored **2026-06-05** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 58.8% (n=250).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -473,10 +545,10 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=12) | 47.3% (n=2413) | 48.6% (n=2211) | 49.8% (n=239781) |
-| 20d | n/a (n=0) | n/a (n=0) | 47.9% (n=5966) | 47.9% (n=217631) |
-| 60d | n/a (n=0) | n/a (n=0) | 48.9% (n=6946) | 44.6% (n=189311) |
-| 120d | n/a (n=0) | n/a (n=0) | 49.8% (n=6915) | 40.4% (n=142906) |
+| 5d | only 12 names, too few to score (needs 20) | 47.3% (n=2413) | 48.6% (n=2211) | 49.8% (n=239781) |
+| 20d | no names in this bucket | no names in this bucket | 47.9% (n=5966) | 47.9% (n=217631) |
+| 60d | no names in this bucket | no names in this bucket | 48.9% (n=6946) | 44.6% (n=189311) |
+| 120d | no names in this bucket | no names in this bucket | 49.8% (n=6915) | 40.4% (n=142906) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -534,9 +606,9 @@ _None matured today._
 
 **Simulated — same model, backfilled over history**
 
-- **2026-03-10 · v0.5_expanded_universe → 120d** (n=515): Strong n/a (n=6) vs Weak 46.9% (n=254)
-- **2026-08-03 · v0.5_expanded_universe → 20d** (n=1511): Strong 50.0% (n=20) vs Weak 44.8% (n=614)
-- **2026-06-04 · v0.5_expanded_universe → 60d** (n=515): Strong n/a (n=5) vs Weak 63.6% (n=264)
+- Scored **2026-03-10** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 46.9% (n=254).
+- Scored **2026-08-03** · v0.5_expanded_universe, graded **20d** later — 1511 stocks. Top-rated: 50.0% (n=20). Bottom-rated: 44.8% (n=614).
+- Scored **2026-06-04** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 63.6% (n=264).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -544,10 +616,10 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=9) | 46.7% (n=1616) | 48.6% (n=2211) | 49.8% (n=239781) |
-| 20d | n/a (n=0) | n/a (n=0) | 47.8% (n=5951) | 47.9% (n=217072) |
-| 60d | n/a (n=0) | n/a (n=0) | 48.9% (n=6926) | 44.6% (n=188594) |
-| 120d | n/a (n=0) | n/a (n=0) | 49.8% (n=6903) | 40.3% (n=142128) |
+| 5d | only 9 names, too few to score (needs 20) | 46.7% (n=1616) | 48.6% (n=2211) | 49.8% (n=239781) |
+| 20d | no names in this bucket | no names in this bucket | 47.8% (n=5951) | 47.9% (n=217072) |
+| 60d | no names in this bucket | no names in this bucket | 48.9% (n=6926) | 44.6% (n=188594) |
+| 120d | no names in this bucket | no names in this bucket | 49.8% (n=6903) | 40.3% (n=142128) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -607,13 +679,13 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- **2026-08-21 · v0.5_expanded_universe → 5d** (n=1514): Strong n/a (n=3) vs Weak 49.4% (n=798)
+- Scored **2026-08-21** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 49.4% (n=798).
 
 **Simulated — same model, backfilled over history**
 
-- **2026-03-09 · v0.5_expanded_universe → 120d** (n=515): Strong n/a (n=7) vs Weak 45.6% (n=248)
-- **2026-07-31 · v0.5_expanded_universe → 20d** (n=517): Strong n/a (n=4) vs Weak 44.7% (n=246)
-- **2026-06-03 · v0.5_expanded_universe → 60d** (n=515): Strong n/a (n=4) vs Weak 61.1% (n=270)
+- Scored **2026-03-09** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 7 names, too few to score (needs 20). Bottom-rated: 45.6% (n=248).
+- Scored **2026-07-31** · v0.5_expanded_universe, graded **20d** later — 517 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 44.7% (n=246).
+- Scored **2026-06-03** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 61.1% (n=270).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -621,10 +693,10 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=9) | 46.7% (n=1616) | 48.6% (n=2211) | 49.8% (n=239781) |
-| 20d | n/a (n=0) | n/a (n=0) | 47.8% (n=5931) | 47.9% (n=216458) |
-| 60d | n/a (n=0) | n/a (n=0) | 48.9% (n=6908) | 44.5% (n=187866) |
-| 120d | n/a (n=0) | n/a (n=0) | 49.8% (n=6889) | 40.3% (n=141381) |
+| 5d | only 9 names, too few to score (needs 20) | 46.7% (n=1616) | 48.6% (n=2211) | 49.8% (n=239781) |
+| 20d | no names in this bucket | no names in this bucket | 47.8% (n=5931) | 47.9% (n=216458) |
+| 60d | no names in this bucket | no names in this bucket | 48.9% (n=6908) | 44.5% (n=187866) |
+| 120d | no names in this bucket | no names in this bucket | 49.8% (n=6889) | 40.3% (n=141381) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -684,13 +756,13 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- **2026-08-20 · v0.5_expanded_universe → 5d** (n=1514): Strong n/a (n=6) vs Weak 44.1% (n=817)
+- Scored **2026-08-20** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 44.1% (n=817).
 
 **Simulated — same model, backfilled over history**
 
-- **2026-03-06 · v0.5_expanded_universe → 120d** (n=515): Strong n/a (n=7) vs Weak 44.5% (n=245)
-- **2026-07-30 · v0.5_expanded_universe → 20d** (n=517): Strong n/a (n=4) vs Weak 45.2% (n=230)
-- **2026-06-02 · v0.5_expanded_universe → 60d** (n=515): Strong n/a (n=3) vs Weak 58.8% (n=274)
+- Scored **2026-03-06** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 7 names, too few to score (needs 20). Bottom-rated: 44.5% (n=245).
+- Scored **2026-07-30** · v0.5_expanded_universe, graded **20d** later — 517 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 45.2% (n=230).
+- Scored **2026-06-02** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 58.8% (n=274).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -698,10 +770,10 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=6) | 44.1% (n=817) | 48.6% (n=2211) | 49.8% (n=239781) |
-| 20d | n/a (n=0) | n/a (n=0) | 47.9% (n=5918) | 47.9% (n=215766) |
-| 60d | n/a (n=0) | n/a (n=0) | 49.0% (n=6890) | 44.4% (n=187138) |
-| 120d | n/a (n=0) | n/a (n=0) | 49.8% (n=6865) | 40.3% (n=140666) |
+| 5d | only 6 names, too few to score (needs 20) | 44.1% (n=817) | 48.6% (n=2211) | 49.8% (n=239781) |
+| 20d | no names in this bucket | no names in this bucket | 47.9% (n=5918) | 47.9% (n=215766) |
+| 60d | no names in this bucket | no names in this bucket | 49.0% (n=6890) | 44.4% (n=187138) |
+| 120d | no names in this bucket | no names in this bucket | 49.8% (n=6865) | 40.3% (n=140666) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -765,10 +837,10 @@ _None matured today._
 
 **Simulated — same model, backfilled over history**
 
-- **2026-03-05 · v0.5_expanded_universe → 120d** (n=515): Strong n/a (n=7) vs Weak 42.1% (n=240)
-- **2026-07-29 · v0.5_expanded_universe → 20d** (n=517): Strong n/a (n=4) vs Weak 48.6% (n=218)
-- **2026-08-19 · v0.5_expanded_universe → 5d** (n=1515): Strong n/a (n=4) vs Weak 46.7% (n=732)
-- **2026-06-01 · v0.5_expanded_universe → 60d** (n=515): Strong n/a (n=5) vs Weak 57.4% (n=270)
+- Scored **2026-03-05** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 7 names, too few to score (needs 20). Bottom-rated: 42.1% (n=240).
+- Scored **2026-07-29** · v0.5_expanded_universe, graded **20d** later — 517 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 48.6% (n=218).
+- Scored **2026-08-19** · v0.5_expanded_universe, graded **5d** later — 1515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 46.7% (n=732).
+- Scored **2026-06-01** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 57.4% (n=270).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -776,10 +848,10 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=0) | n/a (n=0) | 48.6% (n=2211) | 49.8% (n=239781) |
-| 20d | n/a (n=0) | n/a (n=0) | 47.9% (n=5909) | 47.9% (n=215093) |
-| 60d | n/a (n=0) | n/a (n=0) | 49.0% (n=6873) | 44.4% (n=186425) |
-| 120d | n/a (n=0) | n/a (n=0) | 49.9% (n=6836) | 40.2% (n=139965) |
+| 5d | no names in this bucket | no names in this bucket | 48.6% (n=2211) | 49.8% (n=239781) |
+| 20d | no names in this bucket | no names in this bucket | 47.9% (n=5909) | 47.9% (n=215093) |
+| 60d | no names in this bucket | no names in this bucket | 49.0% (n=6873) | 44.4% (n=186425) |
+| 120d | no names in this bucket | no names in this bucket | 49.9% (n=6836) | 40.2% (n=139965) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -836,10 +908,10 @@ _None matured today._
 
 **Simulated — same model, backfilled over history**
 
-- **2026-03-04 · v0.5_expanded_universe → 120d** (n=515): Strong n/a (n=9) vs Weak 46.8% (n=233)
-- **2026-07-28 · v0.5_expanded_universe → 20d** (n=517): Strong n/a (n=4) vs Weak 45.6% (n=206)
-- **2026-08-18 · v0.5_expanded_universe → 5d** (n=1515): Strong n/a (n=6) vs Weak 53.5% (n=778)
-- **2026-05-29 · v0.5_expanded_universe → 60d** (n=515): Strong n/a (n=5) vs Weak 58.1% (n=253)
+- Scored **2026-03-04** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 9 names, too few to score (needs 20). Bottom-rated: 46.8% (n=233).
+- Scored **2026-07-28** · v0.5_expanded_universe, graded **20d** later — 517 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 45.6% (n=206).
+- Scored **2026-08-18** · v0.5_expanded_universe, graded **5d** later — 1515 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 53.5% (n=778).
+- Scored **2026-05-29** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 58.1% (n=253).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -847,10 +919,10 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=0) | n/a (n=0) | 48.6% (n=2207) | 49.8% (n=239049) |
-| 20d | n/a (n=0) | n/a (n=0) | 47.9% (n=5894) | 47.9% (n=214495) |
-| 60d | n/a (n=0) | n/a (n=0) | 49.1% (n=6854) | 44.3% (n=185719) |
-| 120d | n/a (n=0) | n/a (n=0) | 50.0% (n=6804) | 40.2% (n=139271) |
+| 5d | no names in this bucket | no names in this bucket | 48.6% (n=2207) | 49.8% (n=239049) |
+| 20d | no names in this bucket | no names in this bucket | 47.9% (n=5894) | 47.9% (n=214495) |
+| 60d | no names in this bucket | no names in this bucket | 49.1% (n=6854) | 44.3% (n=185719) |
+| 120d | no names in this bucket | no names in this bucket | 50.0% (n=6804) | 40.2% (n=139271) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -908,10 +980,10 @@ _None matured today._
 
 **Simulated — same model, backfilled over history**
 
-- **2026-03-03 · v0.5_expanded_universe → 120d** (n=515): Strong n/a (n=8) vs Weak 45.8% (n=225)
-- **2026-07-27 · v0.5_expanded_universe → 20d** (n=1512): Strong n/a (n=14) vs Weak 46.9% (n=620)
-- **2026-08-17 · v0.5_expanded_universe → 5d** (n=1515): Strong n/a (n=4) vs Weak 64.1% (n=728)
-- **2026-05-28 · v0.5_expanded_universe → 60d** (n=515): Strong n/a (n=6) vs Weak 60.4% (n=250)
+- Scored **2026-03-03** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 8 names, too few to score (needs 20). Bottom-rated: 45.8% (n=225).
+- Scored **2026-07-27** · v0.5_expanded_universe, graded **20d** later — 1512 stocks. Top-rated: only 14 names, too few to score (needs 20). Bottom-rated: 46.9% (n=620).
+- Scored **2026-08-17** · v0.5_expanded_universe, graded **5d** later — 1515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 64.1% (n=728).
+- Scored **2026-05-28** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 60.4% (n=250).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -919,10 +991,10 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=0) | n/a (n=0) | 48.5% (n=2201) | 49.8% (n=238271) |
-| 20d | n/a (n=0) | n/a (n=0) | 47.9% (n=5890) | 47.9% (n=214289) |
-| 60d | n/a (n=0) | n/a (n=0) | 49.1% (n=6849) | 44.3% (n=185466) |
-| 120d | n/a (n=0) | n/a (n=0) | 50.1% (n=6795) | 40.2% (n=139038) |
+| 5d | no names in this bucket | no names in this bucket | 48.5% (n=2201) | 49.8% (n=238271) |
+| 20d | no names in this bucket | no names in this bucket | 47.9% (n=5890) | 47.9% (n=214289) |
+| 60d | no names in this bucket | no names in this bucket | 49.1% (n=6849) | 44.3% (n=185466) |
+| 120d | no names in this bucket | no names in this bucket | 50.1% (n=6795) | 40.2% (n=139038) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -979,10 +1051,10 @@ _None matured today._
 
 **Simulated — same model, backfilled over history**
 
-- **2026-03-02 · v0.5_expanded_universe → 120d** (n=904): Strong 33.3% (n=24) vs Weak 49.7% (n=394)
-- **2026-07-24 · v0.5_expanded_universe → 20d** (n=1514): Strong n/a (n=15) vs Weak 49.5% (n=646)
-- **2026-08-14 · v0.5_expanded_universe → 5d** (n=1517): Strong n/a (n=3) vs Weak 53.0% (n=696)
-- **2026-05-27 · v0.5_expanded_universe → 60d** (n=904): Strong n/a (n=12) vs Weak 58.3% (n=422)
+- Scored **2026-03-02** · v0.5_expanded_universe, graded **120d** later — 904 stocks. Top-rated: 33.3% (n=24). Bottom-rated: 49.7% (n=394).
+- Scored **2026-07-24** · v0.5_expanded_universe, graded **20d** later — 1514 stocks. Top-rated: only 15 names, too few to score (needs 20). Bottom-rated: 49.5% (n=646).
+- Scored **2026-08-14** · v0.5_expanded_universe, graded **5d** later — 1517 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 53.0% (n=696).
+- Scored **2026-05-27** · v0.5_expanded_universe, graded **60d** later — 904 stocks. Top-rated: only 12 names, too few to score (needs 20). Bottom-rated: 58.3% (n=422).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -990,10 +1062,10 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=0) | n/a (n=0) | 48.5% (n=2197) | 49.7% (n=237543) |
-| 20d | n/a (n=0) | n/a (n=0) | 47.9% (n=5876) | 47.9% (n=213669) |
-| 60d | n/a (n=0) | n/a (n=0) | 49.2% (n=6843) | 44.3% (n=185216) |
-| 120d | n/a (n=0) | n/a (n=0) | 50.1% (n=6787) | 40.2% (n=138813) |
+| 5d | no names in this bucket | no names in this bucket | 48.5% (n=2197) | 49.7% (n=237543) |
+| 20d | no names in this bucket | no names in this bucket | 47.9% (n=5876) | 47.9% (n=213669) |
+| 60d | no names in this bucket | no names in this bucket | 49.2% (n=6843) | 44.3% (n=185216) |
+| 120d | no names in this bucket | no names in this bucket | 50.1% (n=6787) | 40.2% (n=138813) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1054,8 +1126,8 @@ _None matured today._
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 48.0% (n=25) | 54.7% (n=6197) | 48.4% (n=2219) | 49.7% (n=237068) |
 | 20d | 43.2% (n=44) | 62.6% (n=2332) | 47.8% (n=5921) | 47.9% (n=212799) |
-| 60d | n/a (n=0) | n/a (n=0) | 49.2% (n=6789) | 44.1% (n=183594) |
-| 120d | n/a (n=0) | n/a (n=0) | 50.3% (n=6699) | 40.0% (n=137292) |
+| 60d | no names in this bucket | no names in this bucket | 49.2% (n=6789) | 44.1% (n=183594) |
+| 120d | no names in this bucket | no names in this bucket | 50.3% (n=6699) | 40.0% (n=137292) |
 
 _Backfill baseline: v0.5_expanded_universe (542 sessions, 2024-06-24 → 2026-08-20)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1108,8 +1180,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-22 · v0.3_sector_neutral → 20d** (n=514): Strong n/a (n=5) vs Weak 58.3% (n=247)
-- **2026-08-12 · v0.3_sector_neutral → 5d** (n=515): Strong n/a (n=1) vs Weak 53.7% (n=246)
+- Scored **2026-07-22** · v0.3_sector_neutral, graded **20d** later — 514 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 58.3% (n=247).
+- Scored **2026-08-12** · v0.3_sector_neutral, graded **5d** later — 515 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 53.7% (n=246).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1117,8 +1189,8 @@ _Research ranking, NOT a buy recommendation._
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 48.0% (n=25) | 54.7% (n=6195) | 40.0% (n=25) | 60.3% (n=224) |
 | 20d | 43.2% (n=44) | 62.6% (n=2332) | 35.7% (n=70) | 68.8% (n=215) |
-| 60d | n/a (n=0) | n/a (n=0) | n/a (n=0) | n/a (n=0) |
-| 120d | n/a (n=0) | n/a (n=0) | n/a (n=0) | n/a (n=0) |
+| 60d | no names in this bucket | no names in this bucket | no names in this bucket | no names in this bucket |
+| 120d | no names in this bucket | no names in this bucket | no names in this bucket | no names in this bucket |
 
 _Backfill baseline: v0.3_sector_neutral (1 sessions, 2026-07-06 → 2026-07-06)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1172,8 +1244,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-21 · v0.3_sector_neutral → 20d** (n=515): Strong n/a (n=5) vs Weak 58.0% (n=269)
-- **2026-08-11 · v0.3_sector_neutral → 5d** (n=516): Strong n/a (n=1) vs Weak 46.7% (n=240)
+- Scored **2026-07-21** · v0.3_sector_neutral, graded **20d** later — 515 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 58.0% (n=269).
+- Scored **2026-08-11** · v0.3_sector_neutral, graded **5d** later — 516 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 46.7% (n=240).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1181,8 +1253,8 @@ _Research ranking, NOT a buy recommendation._
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 38.2% (n=34) | 55.0% (n=6420) | 49.9% (n=4722) | 50.2% (n=171659) |
 | 20d | 39.7% (n=58) | 63.7% (n=2539) | 48.1% (n=12851) | 48.4% (n=158274) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.3% (n=20383) | 45.7% (n=135952) |
-| 120d | n/a (n=0) | n/a (n=0) | 52.6% (n=23048) | 41.1% (n=103487) |
+| 60d | no names in this bucket | no names in this bucket | 51.3% (n=20383) | 45.7% (n=135952) |
+| 120d | no names in this bucket | no names in this bucket | 52.6% (n=23048) | 41.1% (n=103487) |
 
 _Backfill baseline: v0.4_edgar_pit_fundamentals (539 sessions, 2024-06-24 → 2026-08-17)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1235,7 +1307,7 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-08-10 · v0.3_sector_neutral → 5d** (n=516): Strong n/a (n=0) vs Weak 49.1% (n=232)
+- Scored **2026-08-10** · v0.3_sector_neutral, graded **5d** later — 516 stocks. Top-rated: no names in this bucket. Bottom-rated: 49.1% (n=232).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1243,8 +1315,8 @@ _Research ranking, NOT a buy recommendation._
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 36.4% (n=33) | 55.3% (n=6179) | 49.9% (n=4721) | 50.2% (n=171423) |
 | 20d | 37.7% (n=53) | 64.4% (n=2270) | 48.1% (n=12842) | 48.4% (n=158014) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.3% (n=20308) | 45.7% (n=135445) |
-| 120d | n/a (n=0) | n/a (n=0) | 52.7% (n=22926) | 41.1% (n=103049) |
+| 60d | no names in this bucket | no names in this bucket | 51.3% (n=20308) | 45.7% (n=135445) |
+| 120d | no names in this bucket | no names in this bucket | 52.7% (n=22926) | 41.1% (n=103049) |
 
 _Backfill baseline: v0.4_edgar_pit_fundamentals (539 sessions, 2024-06-24 → 2026-08-17)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1297,8 +1369,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-17 · v0.3_sector_neutral → 20d** (n=516): Strong n/a (n=5) vs Weak 62.6% (n=257)
-- **2026-08-07 · v0.3_sector_neutral → 5d** (n=517): Strong n/a (n=0) vs Weak 50.9% (n=232)
+- Scored **2026-07-17** · v0.3_sector_neutral, graded **20d** later — 516 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 62.6% (n=257).
+- Scored **2026-08-07** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: no names in this bucket. Bottom-rated: 50.9% (n=232).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1306,8 +1378,8 @@ _Research ranking, NOT a buy recommendation._
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 36.4% (n=33) | 55.6% (n=5947) | 49.6% (n=3652) | 50.0% (n=84437) |
 | 20d | 37.7% (n=53) | 64.4% (n=2270) | 48.2% (n=10265) | 48.1% (n=78383) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.1% (n=17061) | 45.9% (n=67027) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.0% (n=19583) | 41.5% (n=50683) |
+| 60d | no names in this bucket | no names in this bucket | 51.1% (n=17061) | 45.9% (n=67027) |
+| 120d | no names in this bucket | no names in this bucket | 53.0% (n=19583) | 41.5% (n=50683) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1361,8 +1433,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-16 · v0.3_sector_neutral → 20d** (n=516): Strong n/a (n=4) vs Weak 64.4% (n=225)
-- **2026-08-06 · v0.3_sector_neutral → 5d** (n=516): Strong n/a (n=1) vs Weak 53.1% (n=241)
+- Scored **2026-07-16** · v0.3_sector_neutral, graded **20d** later — 516 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 64.4% (n=225).
+- Scored **2026-08-06** · v0.3_sector_neutral, graded **5d** later — 516 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 53.1% (n=241).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1370,8 +1442,8 @@ _Research ranking, NOT a buy recommendation._
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 36.4% (n=33) | 55.7% (n=5715) | 49.6% (n=3652) | 50.0% (n=84437) |
 | 20d | 39.6% (n=48) | 64.6% (n=2013) | 48.2% (n=10265) | 48.1% (n=78383) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.1% (n=17012) | 45.8% (n=66747) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.0% (n=19478) | 41.4% (n=50466) |
+| 60d | no names in this bucket | no names in this bucket | 51.1% (n=17012) | 45.8% (n=66747) |
+| 120d | no names in this bucket | no names in this bucket | 53.0% (n=19478) | 41.4% (n=50466) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1424,8 +1496,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-15 · v0.3_sector_neutral → 20d** (n=516): Strong n/a (n=5) vs Weak 62.7% (n=249)
-- **2026-08-05 · v0.3_sector_neutral → 5d** (n=516): Strong n/a (n=0) vs Weak 48.7% (n=273)
+- Scored **2026-07-15** · v0.3_sector_neutral, graded **20d** later — 516 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 62.7% (n=249).
+- Scored **2026-08-05** · v0.3_sector_neutral, graded **5d** later — 516 stocks. Top-rated: no names in this bucket. Bottom-rated: 48.7% (n=273).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1433,8 +1505,8 @@ _Research ranking, NOT a buy recommendation._
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 37.5% (n=32) | 55.9% (n=5474) | 49.6% (n=3652) | 50.0% (n=84437) |
 | 20d | 40.9% (n=44) | 64.7% (n=1788) | 48.2% (n=10265) | 48.1% (n=78383) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.1% (n=16961) | 45.8% (n=66469) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.1% (n=19363) | 41.4% (n=50256) |
+| 60d | no names in this bucket | no names in this bucket | 51.1% (n=16961) | 45.8% (n=66469) |
+| 120d | no names in this bucket | no names in this bucket | 53.1% (n=19363) | 41.4% (n=50256) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1487,7 +1559,7 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-08-04 · v0.3_sector_neutral → 5d** (n=516): Strong n/a (n=1) vs Weak 49.8% (n=281)
+- Scored **2026-08-04** · v0.3_sector_neutral, graded **5d** later — 516 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 49.8% (n=281).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1495,8 +1567,8 @@ _Research ranking, NOT a buy recommendation._
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 37.5% (n=32) | 56.2% (n=5201) | 49.6% (n=3652) | 50.0% (n=84437) |
 | 20d | 38.5% (n=39) | 65.0% (n=1539) | 48.2% (n=10265) | 48.1% (n=78383) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.2% (n=16912) | 45.7% (n=66170) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.1% (n=19261) | 41.4% (n=50041) |
+| 60d | no names in this bucket | no names in this bucket | 51.2% (n=16912) | 45.7% (n=66170) |
+| 120d | no names in this bucket | no names in this bucket | 53.1% (n=19261) | 41.4% (n=50041) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1549,8 +1621,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-13 · v0.3_sector_neutral → 20d** (n=516): Strong n/a (n=3) vs Weak 63.4% (n=232)
-- **2026-08-03 · v0.3_sector_neutral → 5d** (n=516): Strong n/a (n=1) vs Weak 51.5% (n=305)
+- Scored **2026-07-13** · v0.3_sector_neutral, graded **20d** later — 516 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 63.4% (n=232).
+- Scored **2026-08-03** · v0.3_sector_neutral, graded **5d** later — 516 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 51.5% (n=305).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1558,8 +1630,8 @@ _Research ranking, NOT a buy recommendation._
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 38.7% (n=31) | 56.6% (n=4919) | 49.6% (n=3652) | 50.0% (n=84437) |
 | 20d | 38.5% (n=39) | 65.0% (n=1539) | 48.2% (n=10265) | 48.1% (n=78383) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.2% (n=16848) | 45.6% (n=65905) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.2% (n=19150) | 41.4% (n=49840) |
+| 60d | no names in this bucket | no names in this bucket | 51.2% (n=16848) | 45.6% (n=65905) |
+| 120d | no names in this bucket | no names in this bucket | 53.2% (n=19150) | 41.4% (n=49840) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1611,8 +1683,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-10 · v0.3_sector_neutral → 20d** (n=517): Strong n/a (n=2) vs Weak 68.1% (n=204)
-- **2026-07-31 · v0.3_sector_neutral → 5d** (n=517): Strong n/a (n=0) vs Weak 59.3% (n=312)
+- Scored **2026-07-10** · v0.3_sector_neutral, graded **20d** later — 517 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 68.1% (n=204).
+- Scored **2026-07-31** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: no names in this bucket. Bottom-rated: 59.3% (n=312).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1620,8 +1692,8 @@ _Research ranking, NOT a buy recommendation._
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 40.0% (n=30) | 57.0% (n=4614) | 49.6% (n=3652) | 50.0% (n=84437) |
 | 20d | 36.1% (n=36) | 65.3% (n=1307) | 48.2% (n=10265) | 48.1% (n=78383) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.3% (n=16786) | 45.5% (n=65632) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.2% (n=19042) | 41.4% (n=49630) |
+| 60d | no names in this bucket | no names in this bucket | 51.3% (n=16786) | 45.5% (n=65632) |
+| 120d | no names in this bucket | no names in this bucket | 53.2% (n=19042) | 41.4% (n=49630) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1674,7 +1746,7 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-09 · v0.3_sector_neutral → 20d** (n=516): Strong n/a (n=4) vs Weak 65.3% (n=222)
+- Scored **2026-07-09** · v0.3_sector_neutral, graded **20d** later — 516 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 65.3% (n=222).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1682,8 +1754,8 @@ _Research ranking, NOT a buy recommendation._
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 40.0% (n=30) | 56.8% (n=4302) | 49.6% (n=3652) | 50.0% (n=84437) |
 | 20d | 35.3% (n=34) | 64.7% (n=1103) | 48.2% (n=10265) | 48.1% (n=78383) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.4% (n=16722) | 45.4% (n=65368) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.2% (n=18937) | 41.4% (n=49417) |
+| 60d | no names in this bucket | no names in this bucket | 51.4% (n=16722) | 45.4% (n=65368) |
+| 120d | no names in this bucket | no names in this bucket | 53.2% (n=18937) | 41.4% (n=49417) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1736,8 +1808,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-08 · v0.3_sector_neutral → 20d** (n=516): Strong n/a (n=5) vs Weak 60.3% (n=224)
-- **2026-07-29 · v0.3_sector_neutral → 5d** (n=516): Strong n/a (n=2) vs Weak 53.4% (n=279)
+- Scored **2026-07-08** · v0.3_sector_neutral, graded **20d** later — 516 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 60.3% (n=224).
+- Scored **2026-07-29** · v0.3_sector_neutral, graded **5d** later — 516 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 53.4% (n=279).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1745,8 +1817,8 @@ _Research ranking, NOT a buy recommendation._
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 40.0% (n=30) | 56.8% (n=4302) | 49.6% (n=3652) | 50.0% (n=84437) |
 | 20d | 33.3% (n=30) | 64.6% (n=881) | 48.2% (n=10265) | 48.1% (n=78383) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.4% (n=16663) | 45.3% (n=65107) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.2% (n=18837) | 41.4% (n=49204) |
+| 60d | no names in this bucket | no names in this bucket | 51.4% (n=16663) | 45.3% (n=65107) |
+| 120d | no names in this bucket | no names in this bucket | 53.2% (n=18837) | 41.4% (n=49204) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1798,8 +1870,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-07 · v0.3_sector_neutral → 20d** (n=517): Strong n/a (n=6) vs Weak 64.5% (n=203)
-- **2026-07-28 · v0.3_sector_neutral → 5d** (n=517): Strong n/a (n=1) vs Weak 57.5% (n=280)
+- Scored **2026-07-07** · v0.3_sector_neutral, graded **20d** later — 517 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 64.5% (n=203).
+- Scored **2026-07-28** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 57.5% (n=280).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1807,8 +1879,8 @@ _Research ranking, NOT a buy recommendation._
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 42.9% (n=28) | 57.0% (n=4023) | 49.6% (n=3652) | 50.0% (n=84437) |
 | 20d | 36.0% (n=25) | 66.1% (n=657) | 48.2% (n=10265) | 48.1% (n=78383) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.5% (n=16611) | 45.3% (n=64839) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.3% (n=18732) | 41.4% (n=48997) |
+| 60d | no names in this bucket | no names in this bucket | 51.5% (n=16611) | 45.3% (n=64839) |
+| 120d | no names in this bucket | no names in this bucket | 53.3% (n=18732) | 41.4% (n=48997) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1860,16 +1932,16 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-27 · v0.3_sector_neutral → 5d** (n=517): Strong n/a (n=0) vs Weak 52.7% (n=317)
+- Scored **2026-07-27** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: no names in this bucket. Bottom-rated: 52.7% (n=317).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 44.4% (n=27) | 57.0% (n=3743) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=19) | 66.7% (n=454) | 48.2% (n=10265) | 48.1% (n=78383) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.5% (n=16554) | 45.2% (n=64575) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.3% (n=18623) | 41.4% (n=48795) |
+| 20d | only 19 names, too few to score (needs 20) | 66.7% (n=454) | 48.2% (n=10265) | 48.1% (n=78383) |
+| 60d | no names in this bucket | no names in this bucket | 51.5% (n=16554) | 45.2% (n=64575) |
+| 120d | no names in this bucket | no names in this bucket | 53.3% (n=18623) | 41.4% (n=48795) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1921,17 +1993,17 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-02 · v0.2_fundamentals_added → 20d** (n=517): Strong n/a (n=9) vs Weak 65.5% (n=226)
-- **2026-07-24 · v0.3_sector_neutral → 5d** (n=517): Strong n/a (n=1) vs Weak 57.4% (n=329)
+- Scored **2026-07-02** · v0.2_fundamentals_added, graded **20d** later — 517 stocks. Top-rated: only 9 names, too few to score (needs 20). Bottom-rated: 65.5% (n=226).
+- Scored **2026-07-24** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 57.4% (n=329).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 44.4% (n=27) | 57.4% (n=3426) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=19) | 66.7% (n=454) | 48.3% (n=10195) | 48.0% (n=78168) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.5% (n=16492) | 45.2% (n=64317) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.3% (n=18509) | 41.4% (n=48596) |
+| 20d | only 19 names, too few to score (needs 20) | 66.7% (n=454) | 48.3% (n=10195) | 48.0% (n=78168) |
+| 60d | no names in this bucket | no names in this bucket | 51.5% (n=16492) | 45.2% (n=64317) |
+| 120d | no names in this bucket | no names in this bucket | 53.3% (n=18509) | 41.4% (n=48596) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -1985,16 +2057,16 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-01 · v0.2_fundamentals_added → 20d** (n=517): Strong n/a (n=10) vs Weak 68.0% (n=228)
+- Scored **2026-07-01** · v0.2_fundamentals_added, graded **20d** later — 517 stocks. Top-rated: only 10 names, too few to score (needs 20). Bottom-rated: 68.0% (n=228).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 42.3% (n=26) | 57.4% (n=3097) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=10) | 68.0% (n=228) | 48.3% (n=10195) | 48.0% (n=78168) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.6% (n=16437) | 45.1% (n=64059) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.3% (n=18392) | 41.4% (n=48396) |
+| 20d | only 10 names, too few to score (needs 20) | 68.0% (n=228) | 48.3% (n=10195) | 48.0% (n=78168) |
+| 60d | no names in this bucket | no names in this bucket | 51.6% (n=16437) | 45.1% (n=64059) |
+| 120d | no names in this bucket | no names in this bucket | 53.3% (n=18392) | 41.4% (n=48396) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2046,16 +2118,16 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-22 · v0.3_sector_neutral → 5d** (n=517): Strong n/a (n=4) vs Weak 65.0% (n=280)
+- Scored **2026-07-22** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 65.0% (n=280).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 42.3% (n=26) | 57.4% (n=3097) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.3% (n=10195) | 48.0% (n=78168) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.6% (n=16382) | 45.1% (n=63801) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.4% (n=18300) | 41.4% (n=48176) |
+| 20d | no names in this bucket | no names in this bucket | 48.3% (n=10195) | 48.0% (n=78168) |
+| 60d | no names in this bucket | no names in this bucket | 51.6% (n=16382) | 45.1% (n=63801) |
+| 120d | no names in this bucket | no names in this bucket | 53.4% (n=18300) | 41.4% (n=48176) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2107,16 +2179,16 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-21 · v0.3_sector_neutral → 5d** (n=517): Strong n/a (n=1) vs Weak 62.9% (n=283)
+- Scored **2026-07-21** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 62.9% (n=283).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 31.8% (n=22) | 56.6% (n=2817) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.3% (n=10195) | 48.0% (n=78168) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.6% (n=16317) | 45.0% (n=63565) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.4% (n=18202) | 41.4% (n=47960) |
+| 20d | no names in this bucket | no names in this bucket | 48.3% (n=10195) | 48.0% (n=78168) |
+| 60d | no names in this bucket | no names in this bucket | 51.6% (n=16317) | 45.0% (n=63565) |
+| 120d | no names in this bucket | no names in this bucket | 53.4% (n=18202) | 41.4% (n=47960) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2175,9 +2247,9 @@ _None matured today._
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 28.6% (n=21) | 55.9% (n=2534) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.3% (n=10195) | 48.0% (n=78168) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.6% (n=16236) | 45.0% (n=63337) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.4% (n=18105) | 41.4% (n=47747) |
+| 20d | no names in this bucket | no names in this bucket | 48.3% (n=10195) | 48.0% (n=78168) |
+| 60d | no names in this bucket | no names in this bucket | 51.6% (n=16236) | 45.0% (n=63337) |
+| 120d | no names in this bucket | no names in this bucket | 53.4% (n=18105) | 41.4% (n=47747) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2229,16 +2301,16 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-17 · v0.3_sector_neutral → 5d** (n=517): Strong n/a (n=2) vs Weak 53.9% (n=282)
+- Scored **2026-07-17** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 53.9% (n=282).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 28.6% (n=21) | 55.9% (n=2534) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.3% (n=10152) | 48.0% (n=77945) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.6% (n=16174) | 44.9% (n=63073) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.4% (n=18004) | 41.4% (n=47536) |
+| 20d | no names in this bucket | no names in this bucket | 48.3% (n=10152) | 48.0% (n=77945) |
+| 60d | no names in this bucket | no names in this bucket | 51.6% (n=16174) | 44.9% (n=63073) |
+| 120d | no names in this bucket | no names in this bucket | 53.4% (n=18004) | 41.4% (n=47536) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2292,16 +2364,16 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-16 · v0.3_sector_neutral → 5d** (n=517): Strong n/a (n=1) vs Weak 56.2% (n=233)
+- Scored **2026-07-16** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 56.2% (n=233).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=19) | 56.2% (n=2252) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.4% (n=10118) | 47.9% (n=77717) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.6% (n=16101) | 44.9% (n=62833) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.4% (n=17910) | 41.4% (n=47340) |
+| 5d | only 19 names, too few to score (needs 20) | 56.2% (n=2252) | 49.6% (n=3652) | 50.0% (n=84437) |
+| 20d | no names in this bucket | no names in this bucket | 48.4% (n=10118) | 47.9% (n=77717) |
+| 60d | no names in this bucket | no names in this bucket | 51.6% (n=16101) | 44.9% (n=62833) |
+| 120d | no names in this bucket | no names in this bucket | 53.4% (n=17910) | 41.4% (n=47340) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2353,16 +2425,16 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-15 · v0.3_sector_neutral → 5d** (n=517): Strong n/a (n=1) vs Weak 53.6% (n=263)
+- Scored **2026-07-15** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 53.6% (n=263).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=18) | 56.2% (n=2019) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.4% (n=10083) | 47.9% (n=77479) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.6% (n=16034) | 44.9% (n=62583) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.3% (n=17811) | 41.4% (n=47134) |
+| 5d | only 18 names, too few to score (needs 20) | 56.2% (n=2019) | 49.6% (n=3652) | 50.0% (n=84437) |
+| 20d | no names in this bucket | no names in this bucket | 48.4% (n=10083) | 47.9% (n=77479) |
+| 60d | no names in this bucket | no names in this bucket | 51.6% (n=16034) | 44.9% (n=62583) |
+| 120d | no names in this bucket | no names in this bucket | 53.3% (n=17811) | 41.4% (n=47134) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2420,10 +2492,10 @@ _None matured today._
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=17) | 56.5% (n=1756) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.4% (n=10050) | 47.9% (n=77237) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.6% (n=15966) | 44.9% (n=62340) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.3% (n=17720) | 41.5% (n=46920) |
+| 5d | only 17 names, too few to score (needs 20) | 56.5% (n=1756) | 49.6% (n=3652) | 50.0% (n=84437) |
+| 20d | no names in this bucket | no names in this bucket | 48.4% (n=10050) | 47.9% (n=77237) |
+| 60d | no names in this bucket | no names in this bucket | 51.6% (n=15966) | 44.9% (n=62340) |
+| 120d | no names in this bucket | no names in this bucket | 53.3% (n=17720) | 41.5% (n=46920) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2477,16 +2549,16 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-13 · v0.3_sector_neutral → 5d** (n=517): Strong n/a (n=1) vs Weak 52.8% (n=269)
+- Scored **2026-07-13** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 52.8% (n=269).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=17) | 56.5% (n=1756) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.4% (n=10023) | 47.8% (n=76980) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.6% (n=15901) | 44.9% (n=62089) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.3% (n=17621) | 41.5% (n=46719) |
+| 5d | only 17 names, too few to score (needs 20) | 56.5% (n=1756) | 49.6% (n=3652) | 50.0% (n=84437) |
+| 20d | no names in this bucket | no names in this bucket | 48.4% (n=10023) | 47.8% (n=76980) |
+| 60d | no names in this bucket | no names in this bucket | 51.6% (n=15901) | 44.9% (n=62089) |
+| 120d | no names in this bucket | no names in this bucket | 53.3% (n=17621) | 41.5% (n=46719) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2538,16 +2610,16 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-10 · v0.3_sector_neutral → 5d** (n=517): Strong n/a (n=0) vs Weak 55.6% (n=275)
+- Scored **2026-07-10** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: no names in this bucket. Bottom-rated: 55.6% (n=275).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=16) | 57.2% (n=1487) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.4% (n=10006) | 47.7% (n=76718) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.6% (n=15842) | 45.0% (n=61835) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.3% (n=17520) | 41.5% (n=46525) |
+| 5d | only 16 names, too few to score (needs 20) | 57.2% (n=1487) | 49.6% (n=3652) | 50.0% (n=84437) |
+| 20d | no names in this bucket | no names in this bucket | 48.4% (n=10006) | 47.7% (n=76718) |
+| 60d | no names in this bucket | no names in this bucket | 51.6% (n=15842) | 45.0% (n=61835) |
+| 120d | no names in this bucket | no names in this bucket | 53.3% (n=17520) | 41.5% (n=46525) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2599,16 +2671,16 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-09 · v0.3_sector_neutral → 5d** (n=517): Strong n/a (n=2) vs Weak 57.8% (n=263)
+- Scored **2026-07-09** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 57.8% (n=263).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=16) | 57.6% (n=1212) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.4% (n=9989) | 47.7% (n=76453) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.5% (n=15784) | 45.0% (n=61580) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.3% (n=17420) | 41.5% (n=46327) |
+| 5d | only 16 names, too few to score (needs 20) | 57.6% (n=1212) | 49.6% (n=3652) | 50.0% (n=84437) |
+| 20d | no names in this bucket | no names in this bucket | 48.4% (n=9989) | 47.7% (n=76453) |
+| 60d | no names in this bucket | no names in this bucket | 51.5% (n=15784) | 45.0% (n=61580) |
+| 120d | no names in this bucket | no names in this bucket | 53.3% (n=17420) | 41.5% (n=46327) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2660,16 +2732,16 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-08 · v0.3_sector_neutral → 5d** (n=517): Strong n/a (n=2) vs Weak 56.4% (n=250)
+- Scored **2026-07-08** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 56.4% (n=250).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=14) | 57.5% (n=949) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.4% (n=9960) | 47.7% (n=76239) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.5% (n=15727) | 45.0% (n=61335) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.2% (n=17308) | 41.6% (n=46134) |
+| 5d | only 14 names, too few to score (needs 20) | 57.5% (n=949) | 49.6% (n=3652) | 50.0% (n=84437) |
+| 20d | no names in this bucket | no names in this bucket | 48.4% (n=9960) | 47.7% (n=76239) |
+| 60d | no names in this bucket | no names in this bucket | 51.5% (n=15727) | 45.0% (n=61335) |
+| 120d | no names in this bucket | no names in this bucket | 53.2% (n=17308) | 41.6% (n=46134) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2721,16 +2793,16 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-07 · v0.3_sector_neutral → 5d** (n=517): Strong n/a (n=2) vs Weak 58.3% (n=228)
+- Scored **2026-07-07** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 58.3% (n=228).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=12) | 57.9% (n=699) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.5% (n=9933) | 47.7% (n=76015) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.5% (n=15675) | 45.0% (n=61090) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.2% (n=17208) | 41.6% (n=45937) |
+| 5d | only 12 names, too few to score (needs 20) | 57.9% (n=699) | 49.6% (n=3652) | 50.0% (n=84437) |
+| 20d | no names in this bucket | no names in this bucket | 48.5% (n=9933) | 47.7% (n=76015) |
+| 60d | no names in this bucket | no names in this bucket | 51.5% (n=15675) | 45.0% (n=61090) |
+| 120d | no names in this bucket | no names in this bucket | 53.2% (n=17208) | 41.6% (n=45937) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2788,10 +2860,10 @@ _None matured today._
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=10) | 57.7% (n=471) | 49.6% (n=3652) | 50.0% (n=84437) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.5% (n=9898) | 47.7% (n=75778) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.5% (n=15627) | 45.0% (n=60831) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.2% (n=17123) | 41.6% (n=45727) |
+| 5d | only 10 names, too few to score (needs 20) | 57.7% (n=471) | 49.6% (n=3652) | 50.0% (n=84437) |
+| 20d | no names in this bucket | no names in this bucket | 48.5% (n=9898) | 47.7% (n=75778) |
+| 60d | no names in this bucket | no names in this bucket | 51.5% (n=15627) | 45.0% (n=60831) |
+| 120d | no names in this bucket | no names in this bucket | 53.2% (n=17123) | 41.6% (n=45727) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2843,16 +2915,16 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-02 · v0.2_fundamentals_added → 5d** (n=517): Strong n/a (n=6) vs Weak 54.8% (n=230)
+- Scored **2026-07-02** · v0.2_fundamentals_added, graded **5d** later — 517 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 54.8% (n=230).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=10) | 57.7% (n=471) | 49.7% (n=3627) | 50.0% (n=84213) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.5% (n=9864) | 47.7% (n=75528) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.4% (n=15588) | 44.9% (n=60564) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.1% (n=17017) | 41.6% (n=45533) |
+| 5d | only 10 names, too few to score (needs 20) | 57.7% (n=471) | 49.7% (n=3627) | 50.0% (n=84213) |
+| 20d | no names in this bucket | no names in this bucket | 48.5% (n=9864) | 47.7% (n=75528) |
+| 60d | no names in this bucket | no names in this bucket | 51.4% (n=15588) | 44.9% (n=60564) |
+| 120d | no names in this bucket | no names in this bucket | 53.1% (n=17017) | 41.6% (n=45533) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2904,16 +2976,16 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- **2026-07-01 · v0.2_fundamentals_added → 5d** (n=517): Strong n/a (n=4) vs Weak 60.6% (n=241)
+- Scored **2026-07-01** · v0.2_fundamentals_added, graded **5d** later — 517 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 60.6% (n=241).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=4) | 60.6% (n=241) | 49.7% (n=3627) | 50.0% (n=84213) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.4% (n=9840) | 47.7% (n=75258) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.4% (n=15546) | 44.9% (n=60306) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.1% (n=16904) | 41.6% (n=45339) |
+| 5d | only 4 names, too few to score (needs 20) | 60.6% (n=241) | 49.7% (n=3627) | 50.0% (n=84213) |
+| 20d | no names in this bucket | no names in this bucket | 48.4% (n=9840) | 47.7% (n=75258) |
+| 60d | no names in this bucket | no names in this bucket | 51.4% (n=15546) | 44.9% (n=60306) |
+| 120d | no names in this bucket | no names in this bucket | 53.1% (n=16904) | 41.6% (n=45339) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -2971,10 +3043,10 @@ _None matured today._
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=0) | n/a (n=0) | 49.7% (n=3627) | 50.0% (n=84213) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.5% (n=9809) | 47.7% (n=75003) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.4% (n=15512) | 44.9% (n=60044) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.1% (n=16799) | 41.6% (n=45136) |
+| 5d | no names in this bucket | no names in this bucket | 49.7% (n=3627) | 50.0% (n=84213) |
+| 20d | no names in this bucket | no names in this bucket | 48.5% (n=9809) | 47.7% (n=75003) |
+| 60d | no names in this bucket | no names in this bucket | 51.4% (n=15512) | 44.9% (n=60044) |
+| 120d | no names in this bucket | no names in this bucket | 53.1% (n=16799) | 41.6% (n=45136) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -3031,10 +3103,10 @@ _None matured today._
 
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
-| 5d | n/a (n=0) | n/a (n=0) | 49.7% (n=3627) | 50.0% (n=84213) |
-| 20d | n/a (n=0) | n/a (n=0) | 48.5% (n=9786) | 47.7% (n=74727) |
-| 60d | n/a (n=0) | n/a (n=0) | 51.4% (n=15475) | 44.9% (n=59779) |
-| 120d | n/a (n=0) | n/a (n=0) | 53.1% (n=16693) | 41.6% (n=44920) |
+| 5d | no names in this bucket | no names in this bucket | 49.7% (n=3627) | 50.0% (n=84213) |
+| 20d | no names in this bucket | no names in this bucket | 48.5% (n=9786) | 47.7% (n=74727) |
+| 60d | no names in this bucket | no names in this bucket | 51.4% (n=15475) | 44.9% (n=59779) |
+| 120d | no names in this bucket | no names in this bucket | 53.1% (n=16693) | 41.6% (n=44920) |
 
 _Backfill baseline: v0.1_price_volume_only (504 sessions, 2024-06-24 → 2026-06-26)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._

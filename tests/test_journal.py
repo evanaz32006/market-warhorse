@@ -373,7 +373,10 @@ def test_section2_per_bucket_gating_shows_large_hides_small():
     c = journal._matured_cohorts_section(cohorts, cal[5])["cohorts"][0]
     assert c["strong_n"] == min_n and c["strong_hit_pct"] is not None   # large bucket: rate shown
     assert c["weak_n"] == 3 and c["weak_hit_pct"] is None               # small bucket: gated
-    assert "n/a (n=3)" in "\n".join(journal._render_section2({"cohorts": [c]}))
+    rendered = "\n".join(journal._render_section2({"cohorts": [c]}))
+    assert "too few to score" in rendered and ("needs %d" % min_n) in rendered
+    assert "only 3 names" in rendered
+    assert "n/a" not in rendered, "a suppressed bucket must explain itself"
 
 
 def test_recovered_rows_excluded_from_section2_and_section3():
@@ -504,3 +507,46 @@ def test_regenerated_entry_still_renders_every_section():
     assert "scored 10 tickers" in full
     assert "regenerated from stored snapshots" in regen
     assert "None tickers" not in regen and "unknown time" not in regen
+
+
+def test_cohort_line_accounts_for_every_graded_name():
+    """The owner read "6 strong vs 287 weak" out of 515 and asked why the math didn't add up. It
+    didn't, visibly: the middle two bands (decent, watchlist) were 222 names the line never
+    mentioned. Printing only the extremes makes a complete number look like a broken one."""
+    c = {"snapshot_date": "2026-03-20", "model_version": "v0.5", "horizon": "120d",
+         "n": 515, "strong_hit_pct": None, "strong_n": 6, "weak_hit_pct": 42.5,
+         "weak_n": 287, "middle_n": 222, "spread_pts": None, "low_confidence": False}
+    line = journal._render_cohort_lines([c])[0]
+    assert "515 stocks" in line and "222 mid-ranked" in line
+    assert "too few to score" in line
+
+
+def test_the_spread_is_stated_not_left_as_arithmetic():
+    """Strong-minus-weak IS the claim being tested. Leaving the reader to subtract two percentages
+    buries the one number that matters."""
+    c = {"snapshot_date": "2026-08-13", "model_version": "v0.5", "horizon": "20d",
+         "n": 1513, "strong_hit_pct": 52.1, "strong_n": 41, "weak_hit_pct": 46.7,
+         "weak_n": 615, "middle_n": 857, "spread_pts": 5.4, "low_confidence": False}
+    line = journal._render_cohort_lines([c])[0]
+    assert "Spread: +5.4 pts" in line
+
+
+def test_middle_count_is_derived_from_the_graded_total():
+    """middle_n must come from n minus the two graded buckets, so it can never disagree with the
+    numbers printed beside it."""
+    cal = _syn_calendar(20)
+    rows = []
+    for i in range(25):   # strong
+        rows.append({"backfilled": 0, "run_date": cal[0], "ticker": f"S{i}",
+                     "score_5d": 90, "future_excess_return_5d": 0.01})
+    for i in range(30):   # weak
+        rows.append({"backfilled": 0, "run_date": cal[0], "ticker": f"W{i}",
+                     "score_5d": 10, "future_excess_return_5d": -0.01})
+    for i in range(12):   # decent / watchlist — graded total, but not in either bucket
+        rows.append({"backfilled": 0, "run_date": cal[0], "ticker": f"M{i}",
+                     "score_5d": 70, "future_excess_return_5d": 0.01})
+    cohorts = journal._grade_all_cohorts(rows, cal)
+    c = journal._matured_cohorts_section(cohorts, cal[5])["cohorts"][0]
+    assert c["n"] == 67 and c["strong_n"] == 25 and c["weak_n"] == 30
+    assert c["middle_n"] == 12
+    assert c["spread_pts"] == round(100.0 - 0.0, 1)

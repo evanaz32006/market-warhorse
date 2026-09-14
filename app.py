@@ -642,6 +642,11 @@ def main():
     histories = {t: storage.load_price_history(t, db_path=db_path) for t in all_tickers}
     utils.check_duplicate_price_rows(histories)
     utils.check_benchmark_coverage(watchlist, histories)
+    # Interior gaps are invisible to the incremental fetcher, which only ever extends the front of a
+    # series. Two missing IJH/IJR bars once removed every mid- and small-cap from the 60d/120d hit
+    # rates without a single warning anywhere.
+    utils.check_calendar_gaps(histories, benchmarks=set(watchlist["benchmark"]),
+                              calendar_ticker=PARAMS["calendar_ticker"])
     for t in all_tickers:
         if histories.get(t):
             utils.check_sufficient_history(t, histories[t])

@@ -250,6 +250,13 @@ def _matured_cohorts_section(cohorts, run_date, mode="live"):
             "strong_n": strong_n,
             "weak_hit_pct": round(wh, 1) if wh is not None else None,
             "weak_n": weak_n,
+            # The middle bands are not graded, but their COUNT is reported. Printing only the two
+            # extremes made the line read as broken arithmetic - "6 strong vs 287 weak" out of 515
+            # leaves 222 names unaccounted for, with nothing saying they exist.
+            "middle_n": c["n"] - strong_n - weak_n,
+            # The spread is the actual claim being tested; leaving the reader to subtract two
+            # percentages buries it.
+            "spread_pts": (round(sh - wh, 1) if (sh is not None and wh is not None) else None),
             "low_confidence": c["n"] < low_conf_n,
         })
     out.sort(key=lambda x: (x["horizon"], x["snapshot_date"]))
@@ -490,8 +497,19 @@ def _fmt_ic(v):
     return f"{v:+.3f}" if _is_num(v) else "—"
 
 
-def _fmt_hit(pct, n):
-    return (f"{pct}% (n={n})" if pct is not None else f"n/a (n={n})")
+def _fmt_hit(pct, n, min_n=None):
+    """A bucket's hit rate, or WHY there isn't one.
+
+    "n/a (n=6)" read like a bug to the owner, and fairly: it prints a count next to "not available"
+    without saying that the count IS the reason. A suppressed hit rate is a deliberate refusal - six
+    names is far too few for a percentage to mean anything - so the rendering now says that out
+    loud instead of leaving the reader to infer it."""
+    if pct is not None:
+        return f"{pct}% (n={n})"
+    min_n = min_n if min_n is not None else PARAMS["scoreboard_min_bucket_n"]
+    if n == 0:
+        return "no names in this bucket"
+    return f"only {n} name{'s' if n != 1 else ''}, too few to score (needs {min_n})"
 
 
 def _render_entry_v2(entry, brief=None):
@@ -585,8 +603,14 @@ def _render_cohort_lines(cohorts):
         weak = _fmt_hit(c.get("weak_hit_pct"), c.get("weak_n", 0))
         ver = c.get("model_version")
         ver_str = f" \u00b7 {ver}" if ver else ""
-        out.append(f"- **{c['snapshot_date']}{ver_str} \u2192 {c['horizon']}** (n={c['n']}): "
-                   f"Strong {strong} vs Weak {weak}{flag}")
+        spread = (f" **Spread: {c['spread_pts']:+.1f} pts.**"
+                  if c.get("spread_pts") is not None else "")
+        mid = c.get("middle_n")
+        mid_str = f" ({mid} mid-ranked, not graded)" if mid else ""
+        out.append(
+            f"- Scored **{c['snapshot_date']}**{ver_str}, graded **{c['horizon']}** later"
+            f" — {c['n']} stocks{mid_str}. "
+            f"Top-rated: {strong}. Bottom-rated: {weak}.{spread}{flag}")
     return out
 
 
