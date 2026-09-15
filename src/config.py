@@ -697,6 +697,30 @@ EDGAR = {
     "refresh_days": 7,
 }
 
+# --- Filing TEXT + LLM factual extraction (research only, UNPROVEN) ---------------------------
+#
+# The 8-K study tested ITEM CODES and found nothing. Item 8.01 is literally "Other Events" and
+# covers a buyback, a plant fire and a lawsuit settlement alike, so that null says little about
+# whether the filings' TEXT carries signal. Reading them is a different experiment.
+#
+# THE TRAP: an LLM's training data includes what happened AFTER these filings. Asking "is this
+# bullish?" invites it to answer from memory of the stock's subsequent move - a lookahead leak that
+# lives in the model's weights, where no filed_date gating can reach it. Two structural defences:
+# the prompt extracts FACTS only (no sentiment field exists in the schema), and every result is
+# split at the knowledge cutoff so contamination is MEASURED rather than assumed.
+#
+# COST: billed separately from any Claude subscription. ~2.5k input tokens per filing.
+FILING_TEXT = {
+    "model": "claude-haiku-4-5-20251001",   # extraction is reading comprehension; cheap is correct
+    "max_chars": 10000,                     # an 8-K states its substance in the first page or two
+    "max_output_tokens": 500,               # the schema is a dozen booleans
+    # Conservative. Set EARLIER than the true cutoff rather than later: an over-generous value would
+    # put memorisable filings in the "clean" half and hide the very leak the split exists to find.
+    "model_knowledge_cutoff": "2025-01-31",
+    "min_post_cutoff_filings": 500,         # below this the contamination test cannot conclude
+    "pilot_sample_size": 2000,              # prove the method before spending on all 65k
+}
+
 # --- SEC filing index: 8-K material events, 10-K/10-Q dates -----------------------------------
 #
 # SOURCE: the per-company submissions API, which carries the 8-K ITEM CODES. The quarterly bulk

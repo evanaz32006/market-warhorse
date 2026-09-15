@@ -7,7 +7,7 @@ _Machine-appended after every run. Regenerated from the `journal` table; do not 
 ## 2026-09-15 — v0.5_expanded_universe (live)
 
 _Run: scored 1521 tickers in 0.0s · fetch fresh=0 / cached=0 / failed=0_
-_Warnings: re-rendered: ETFs excluded from picks_
+_Warnings: re-rendered after price-gap repair_
 
 ### 1. Today's Rankings
 
@@ -39,15 +39,15 @@ _Research ranking, NOT a buy recommendation._
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-24** · v0.5_expanded_universe, graded **120d** later — 766 stocks (342 mid-ranked, not graded).
-  - If you had bought the top 10: averaged **-2.0%**, made money 50% of the time, **-18.3% vs SPY** (beat it 20% of the time).
-  - Beat their sector: top-rated only 9 names, too few to score (needs 20), bottom-rated 46.0% (n=415).
+- Scored **2026-03-24** · v0.5_expanded_universe, graded **120d** later — 1509 stocks (627 mid-ranked, not graded).
+  - If you had bought the top 10: averaged **+5.1%**, made money 50% of the time, **-11.2% vs SPY** (beat it 30% of the time).
+  - Beat their sector: top-rated 35.0% (n=20), bottom-rated 48.7% (n=862). Spread: **-13.7 pts**.
 - Scored **2026-08-17** · v0.5_expanded_universe, graded **20d** later — 1512 stocks (840 mid-ranked, not graded).
   - If you had bought the top 10: averaged **-3.8%**, made money 20% of the time, **-1.9% vs SPY** (beat it 50% of the time).
   - Beat their sector: top-rated only 16 names, too few to score (needs 20), bottom-rated 51.5% (n=656).
-- Scored **2026-06-18** · v0.5_expanded_universe, graded **60d** later — 766 stocks (388 mid-ranked, not graded).
-  - If you had bought the top 10: averaged **-13.5%**, made money 30% of the time, **-15.0% vs SPY** (beat it 10% of the time).
-  - Beat their sector: top-rated only 8 names, too few to score (needs 20), bottom-rated 63.5% (n=370).
+- Scored **2026-06-18** · v0.5_expanded_universe, graded **60d** later — 1510 stocks (814 mid-ranked, not graded).
+  - If you had bought the top 10: averaged **-9.7%**, made money 20% of the time, **-11.1% vs SPY** (beat it 10% of the time).
+  - Beat their sector: top-rated only 18 names, too few to score (needs 20), bottom-rated 64.0% (n=678).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -56,9 +56,9 @@ _Simulated cohorts are this exact model scored point-in-time on an earlier date,
 | Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
 |---------|-------------|-----------|-----------------|---------------|
 | 5d | 37.1% (n=35) | 48.3% (n=10170) | 48.7% (n=2211) | 49.8% (n=239781) |
-| 20d | no names in this bucket | no names in this bucket | 48.0% (n=6110) | 47.9% (n=223204) |
-| 60d | no names in this bucket | no names in this bucket | 48.3% (n=7120) | 45.0% (n=195748) |
-| 120d | no names in this bucket | no names in this bucket | 49.4% (n=7045) | 40.8% (n=150844) |
+| 20d | no names in this bucket | no names in this bucket | 47.8% (n=6110) | 47.9% (n=223204) |
+| 60d | no names in this bucket | no names in this bucket | 48.3% (n=7149) | 45.2% (n=196612) |
+| 120d | no names in this bucket | no names in this bucket | 49.4% (n=7069) | 40.9% (n=152127) |
 
 _Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
 _Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
@@ -73,12 +73,12 @@ _Live only — 18 live trading day(s) since 2026-08-20. The genuine out-of-sampl
   - short_interest_component: 5d +0.053 (n=17939)
 
 _Full panel — includes backfilled rows. Large sample, but the weights were chosen on this data, so treat it as in-sample and flattering._
-  - value_component: 5d +0.013 (n=769789), 20d +0.024 (n=748683), 60d +0.042 (n=690281), 120d +0.063 (n=601819)
-  - quality_component: 5d -0.008 (n=775164), 20d -0.017 (n=754040), 60d -0.031 (n=695057), 120d -0.044 (n=605741)
+  - value_component: 5d +0.013 (n=769789), 20d +0.024 (n=748684), 60d +0.042 (n=692306), 120d +0.063 (n=603841)
+  - quality_component: 5d -0.009 (n=775164), 20d -0.018 (n=754041), 60d -0.031 (n=697102), 120d -0.045 (n=607783)
   - short_interest_component: 5d +0.053 (n=17939)
 
 **4b. Drift on established components** (recent-window IC vs full history)
-  - **DRIFT** long_momentum_component@5d: +0.001 → +0.075 (recent n=19698)
+  - **DRIFT** long_momentum_component@5d: +0.002 → +0.075 (recent n=19698)
 
 ---
 
