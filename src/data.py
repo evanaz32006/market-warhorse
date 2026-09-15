@@ -9,7 +9,7 @@ Rules (see CLAUDE.md):
 import math
 import time
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import pandas as pd
 import yfinance as yf
@@ -369,3 +369,121 @@ def fetch_next_earnings_date(ticker):
     except Exception as e:
         print(f"[data] could not fetch earnings date for {ticker}: {e}")
         return None, True
+
+
+def repair_price_gaps(db_path=storage.DEFAULT_DB_PATH, calendar_ticker=None, dry_run=False,
+                      max_span_days=30):
+    """Refetch sessions a ticker is MISSING inside its own cached span.
+
+    `fetch_price_history` resumes from `cached_dates[-1]`, so it only ever extends the FRONT of a
+    series. A hole behind that frontier is invisible to it forever — no retry, no error, nothing in
+    any log. This is the only thing that closes one.
+
+    It is not hypothetical and it is not small. Measured 2026-09-15: **752 of 1,527 tickers** were
+    missing at least one interior session, and three dates — 2026-07-21, 07-22 and 07-31 — were
+    absent for roughly 690 tickers each. A failed run on those nights left half the universe with
+    holes. Any forward window spanning a hole comes up short, trips the `idx + n >= len` guardrail
+    in `_forward_return`, and silently drops that name from the horizon's statistics — which is how
+    a 120-day cohort that should have held ~1,500 names reported 515.
+
+    Refetches only the span actually needed per ticker, batched like every other fetch here.
+    `max_span_days` caps how wide a single repair range may be, so one ticker with an ancient hole
+    cannot trigger a multi-year re-download.
+    """
+    calendar_ticker = calendar_ticker or PARAMS["calendar_ticker"]
+    calendar = [r["date"] for r in storage.load_price_history(calendar_ticker, db_path=db_path)]
+    if not calendar:
+        print("[data] no calendar ticker history — cannot detect gaps")
+        return {"tickers": 0, "bars_written": 0, "gaps": {}}
+
+    conn = storage._connect(db_path)
+    try:
+        rows = conn.execute("SELECT ticker, date FROM price_history").fetchall()
+    finally:
+        conn.close()
+    have = {}
+    for t, d in rows:
+        have.setdefault(t, set()).add(d)
+
+    plan = {}
+    for ticker, dates in have.items():
+        lo, hi = min(dates), max(dates)
+        missing = [d for d in calendar if lo <= d <= hi and d not in dates]
+        if missing:
+            plan[ticker] = missing
+    print(f"[data] gap repair: {len(plan)} ticker(s) with interior holes, "
+          f"{sum(len(v) for v in plan.values())} missing bar(s)")
+    if dry_run or not plan:
+        return {"tickers": len(plan), "bars_written": 0, "gaps": plan}
+
+    # Group by the (start, end) span needed, so tickers sharing the same outage are fetched together
+    # rather than one range per name.
+    by_span = {}
+    for ticker, missing in plan.items():
+        start = (date.fromisoformat(min(missing)) - timedelta(days=4)).isoformat()
+        end = (date.fromisoformat(max(missing)) + timedelta(days=4)).isoformat()
+        if (date.fromisoformat(end) - date.fromisoformat(start)).days > max_span_days:
+            print(f"[data]   {ticker}: gap span too wide ({start}..{end}) — skipped, repair by hand")
+            continue
+        by_span.setdefault((start, end), []).append(ticker)
+
+    written = 0
+    batch_size = PARAMS["yfinance_batch_size"]
+    for (start, end), tickers in sorted(by_span.items()):
+        wanted = {d for t in tickers for d in plan[t]}
+        print(f"[data]   repairing {len(tickers)} ticker(s) over {start}..{end}")
+        for i in range(0, len(tickers), batch_size):
+            batch = tickers[i:i + batch_size]
+            frames = _download_batch(batch, start=start, end=end)
+            for ticker, df in frames.items():
+                rows_out = []
+                for d, r in df.iterrows():
+                    ds = d.strftime("%Y-%m-%d")
+                    if ds not in wanted or ds in have.get(ticker, ()):
+                        continue     # only fill HOLES; never overwrite a cached bar
+                    rows_out.append({
+                        "ticker": ticker, "date": ds,
+                        "open": _f(r.get("Open")), "high": _f(r.get("High")),
+                        "low": _f(r.get("Low")), "close": _f(r.get("Close")),
+                        "volume": _f(r.get("Volume")),
+                        "timestamp_fetched": datetime.now(timezone.utc).isoformat(),
+                    })
+                rows_out = [r for r in rows_out if r["close"] is not None]
+                written += storage.upsert_price_rows(rows_out, db_path=db_path)
+            time.sleep(PARAMS["yfinance_batch_delay_sec"])
+    print(f"[data] gap repair wrote {written} bar(s)")
+    return {"tickers": len(plan), "bars_written": written, "gaps": plan}
+
+
+def _f(v):
+    try:
+        f = float(v)
+        return None if f != f else f
+    except (TypeError, ValueError):
+        return None
+
+
+def _download_batch(tickers, start, end):
+    """{ticker: DataFrame} for a date range. Single-ticker frames come back un-multi-indexed, so
+    both shapes are normalised here rather than at every call site."""
+    import yfinance as yf
+    out = {}
+    try:
+        df = yf.download(list(tickers), start=start, end=end, auto_adjust=True,
+                         progress=False, interval="1d", group_by="ticker", threads=False)
+    except Exception as exc:
+        print(f"[data]   batch {tickers} failed: {exc}")
+        return out
+    if df is None or df.empty:
+        return out
+    if isinstance(df.columns, pd.MultiIndex):
+        for t in tickers:
+            if t in df.columns.get_level_values(0):
+                sub = df[t].dropna(how="all")
+                if not sub.empty:
+                    out[t] = sub
+    elif len(tickers) == 1:
+        sub = df.dropna(how="all")
+        if not sub.empty:
+            out[tickers[0]] = sub
+    return out

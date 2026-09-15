@@ -4,6 +4,159 @@ _Machine-appended after every run. Regenerated from the `journal` table; do not 
 
 ---
 
+## 2026-09-15 — v0.5_expanded_universe (live)
+
+_Run: scored 1521 tickers in 0.0s · fetch fresh=0 / cached=0 / failed=0_
+_Warnings: re-rendered: ETFs excluded from picks_
+
+### 1. Today's Rankings
+
+_Research ranking, NOT a buy recommendation._
+
+| # | Ticker | Sector | score_120d | Label | Earnings in |
+|---|--------|--------|-----------|-------|-------------|
+| 1 | MATX | Industrials | 82.7 | strong | 50d |
+| 2 | TMP | Financials | 82.2 | strong | 38d |
+| 3 | INSW | Energy | 80.8 | strong | 51d |
+| 4 | LPG | Energy | 80.7 | strong | 51d |
+| 5 | DINO | Energy | 80.0 | strong | 44d |
+| 6 | HRMY | Health Care | 80.0 | decent | 49d |
+| 7 | VLO | Energy | 79.9 | decent | 37d |
+| 8 | SM | Energy | 79.8 | decent | 48d |
+| 9 | MPC | Energy | 79.6 | decent | 49d |
+| 10 | UFCS | Financials | 79.5 | decent | 49d |
+
+**vs prev live run (2026-09-14):** entered [SM] · exited [BFH]
+**Movers:** ↑ VAL +14.2, RMD +13.8, CNXC +13.0, FTRE +12.2, CE +10.3  ↓ CMG -17.7, ENVA -16.5, SYY -16.1, WRBY -15.8, CFR -14.7
+
+### 2. Predictions that came due today
+
+**Live predictions** (v0.5_expanded_universe)
+
+- Scored **2026-09-08** · v0.5_expanded_universe, graded **5d** later — 1513 stocks (616 mid-ranked, not graded).
+  - If you had bought the top 10: averaged **+0.4%**, made money 60% of the time, **+1.5% vs SPY** (beat it 60% of the time).
+  - Beat their sector: top-rated only 2 names, too few to score (needs 20), bottom-rated 54.4% (n=895).
+
+**Simulated — same model, backfilled over history**
+
+- Scored **2026-03-24** · v0.5_expanded_universe, graded **120d** later — 766 stocks (342 mid-ranked, not graded).
+  - If you had bought the top 10: averaged **-2.0%**, made money 50% of the time, **-18.3% vs SPY** (beat it 20% of the time).
+  - Beat their sector: top-rated only 9 names, too few to score (needs 20), bottom-rated 46.0% (n=415).
+- Scored **2026-08-17** · v0.5_expanded_universe, graded **20d** later — 1512 stocks (840 mid-ranked, not graded).
+  - If you had bought the top 10: averaged **-3.8%**, made money 20% of the time, **-1.9% vs SPY** (beat it 50% of the time).
+  - Beat their sector: top-rated only 16 names, too few to score (needs 20), bottom-rated 51.5% (n=656).
+- Scored **2026-06-18** · v0.5_expanded_universe, graded **60d** later — 766 stocks (388 mid-ranked, not graded).
+  - If you had bought the top 10: averaged **-13.5%**, made money 30% of the time, **-15.0% vs SPY** (beat it 10% of the time).
+  - Beat their sector: top-rated only 8 names, too few to score (needs 20), bottom-rated 63.5% (n=370).
+
+_Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
+
+### 3. Running scoreboard — cumulative Strong vs Weak hit rate
+
+| Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
+|---------|-------------|-----------|-----------------|---------------|
+| 5d | 37.1% (n=35) | 48.3% (n=10170) | 48.7% (n=2211) | 49.8% (n=239781) |
+| 20d | no names in this bucket | no names in this bucket | 48.0% (n=6110) | 47.9% (n=223204) |
+| 60d | no names in this bucket | no names in this bucket | 48.3% (n=7120) | 45.0% (n=195748) |
+| 120d | no names in this bucket | no names in this bucket | 49.4% (n=7045) | 40.8% (n=150844) |
+
+_Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
+_Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
+
+### 4. Live validation tracker
+
+**4a. Fundamental-factor IC** — do value/quality earn their weight?
+
+_Live only — 18 live trading day(s) since 2026-08-20. The genuine out-of-sample read, and the one 4a exists for._
+  - value_component: 5d +0.096 (n=18074)
+  - quality_component: 5d -0.015 (n=18062)
+  - short_interest_component: 5d +0.053 (n=17939)
+
+_Full panel — includes backfilled rows. Large sample, but the weights were chosen on this data, so treat it as in-sample and flattering._
+  - value_component: 5d +0.013 (n=769789), 20d +0.024 (n=748683), 60d +0.042 (n=690281), 120d +0.063 (n=601819)
+  - quality_component: 5d -0.008 (n=775164), 20d -0.017 (n=754040), 60d -0.031 (n=695057), 120d -0.044 (n=605741)
+  - short_interest_component: 5d +0.053 (n=17939)
+
+**4b. Drift on established components** (recent-window IC vs full history)
+  - **DRIFT** long_momentum_component@5d: +0.001 → +0.075 (recent n=19698)
+
+---
+
+## 2026-09-14 — v0.5_expanded_universe (recovered)
+
+_Run: scored 1520 tickers in unknown time · fetch fresh=0 / cached=0 / failed=0_
+_Fundamentals: recovered — fundamentals stamped 2026-09-15 (not point-in-time)_
+_Warnings: recovered missed day; fundamentals as of 2026-09-15, excluded from factor IC_
+
+### 1. Today's Rankings
+
+_Research ranking, NOT a buy recommendation._
+
+| # | Ticker | Sector | score | Label | Earnings in |
+|---|--------|--------|-----------|-------|-------------|
+| 1 | HCI | Financials | 80.4 | strong | — |
+| 2 | RNR | Financials | 80.0 | decent | — |
+| 3 | PR | Energy | 80.0 | decent | — |
+| 4 | T | Communication Services | 79.9 | decent | — |
+| 5 | VZ | Communication Services | 79.8 | decent | — |
+| 6 | APA | Energy | 79.6 | decent | — |
+| 7 | MATX | Industrials | 79.5 | decent | — |
+| 8 | LTC | Real Estate | 78.7 | decent | — |
+| 9 | SM | Energy | 78.4 | decent | — |
+| 10 | MTCH | Communication Services | 78.4 | decent | — |
+
+**vs prev live run (2026-09-11):** entered [HCI, MTCH, RNR, SM] · exited [CF, PSX, TRV, VLO]
+**Movers:** ↑ FTNT +24.4, SONO +22.7, ARLO +21.9, GTM +21.4, CVLT +21.0  ↓ GLW -32.0, KGS -26.7, LITE -25.7, CGNX -25.5, CEG -23.7
+
+### 2. Predictions that came due today
+
+**Live predictions** (v0.5_expanded_universe)
+
+- Scored **2026-09-04** · v0.5_expanded_universe, graded **5d** later — 1514 stocks (636 mid-ranked, not graded).
+  - Beat their sector: top-rated only 3 names, too few to score (needs 20), bottom-rated 48.3% (n=875).
+
+**Simulated — same model, backfilled over history**
+
+- Scored **2026-03-23** · v0.5_expanded_universe, graded **120d** later — 809 stocks (357 mid-ranked, not graded).
+  - Beat their sector: top-rated only 9 names, too few to score (needs 20), bottom-rated 46.7% (n=443).
+- Scored **2026-08-14** · v0.5_expanded_universe, graded **20d** later — 1513 stocks (894 mid-ranked, not graded).
+  - Beat their sector: top-rated only 16 names, too few to score (needs 20), bottom-rated 48.8% (n=603).
+- Scored **2026-06-17** · v0.5_expanded_universe, graded **60d** later — 809 stocks (411 mid-ranked, not graded).
+  - Beat their sector: top-rated only 7 names, too few to score (needs 20), bottom-rated 61.4% (n=391).
+
+_Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
+
+### 3. Running scoreboard — cumulative Strong vs Weak hit rate
+
+| Horizon | Live Strong | Live Weak | Backfill Strong | Backfill Weak |
+|---------|-------------|-----------|-----------------|---------------|
+| 5d | 36.4% (n=33) | 47.7% (n=9275) | 48.7% (n=2211) | 49.8% (n=239781) |
+| 20d | no names in this bucket | no names in this bucket | 48.0% (n=6094) | 47.9% (n=222548) |
+| 60d | no names in this bucket | no names in this bucket | 48.3% (n=7112) | 45.0% (n=195378) |
+| 120d | no names in this bucket | no names in this bucket | 49.5% (n=7036) | 40.7% (n=150429) |
+
+_Backfill baseline: v0.5_expanded_universe (541 sessions, 2024-06-24 → 2026-08-19)._
+_Backfill is survivorship-flattered: today's S&P constituents, delisted names absent — read the backfill columns as optimistic._
+
+### 4. Live validation tracker
+
+**4a. Fundamental-factor IC** — do value/quality earn their weight?
+
+_Live only — 18 live trading day(s) since 2026-08-20. The genuine out-of-sample read, and the one 4a exists for._
+  - value_component: 5d +0.096 (n=18074)
+  - quality_component: 5d -0.015 (n=18062)
+  - short_interest_component: 5d +0.053 (n=17939)
+
+_Full panel — includes backfilled rows. Large sample, but the weights were chosen on this data, so treat it as in-sample and flattering._
+  - value_component: 5d +0.013 (n=769789), 20d +0.024 (n=748683), 60d +0.042 (n=690281), 120d +0.063 (n=601819)
+  - quality_component: 5d -0.008 (n=775164), 20d -0.017 (n=754040), 60d -0.031 (n=695057), 120d -0.044 (n=605741)
+  - short_interest_component: 5d +0.053 (n=17939)
+
+**4b. Drift on established components** (recent-window IC vs full history)
+  - **DRIFT** long_momentum_component@5d: +0.001 → +0.075 (recent n=19698)
+
+---
+
 ## 2026-09-11 — v0.5_expanded_universe (live)
 
 _Run: scored 1521 tickers in 2325.0s · fetch fresh=1521 / cached=6 / failed=1 (CWEN-A)_
@@ -13,7 +166,7 @@ _Warnings: 1 ticker(s) failed price fetch; 7 ticker(s) skipped (stale / no data)
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | PR | Energy | 80.2 | strong | 52d |
 | 2 | VZ | Communication Services | 79.5 | decent | 37d |
@@ -33,13 +186,17 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- Scored **2026-09-03** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 46.5% (n=834).
+- Scored **2026-09-03** · v0.5_expanded_universe, graded **5d** later — 1514 stocks.
+  - Beat their sector: top-rated only 6 names, too few to score (needs 20), bottom-rated 46.5% (n=834).
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-20** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 42.5% (n=287).
-- Scored **2026-08-13** · v0.5_expanded_universe, graded **20d** later — 1513 stocks. Top-rated: only 16 names, too few to score (needs 20). Bottom-rated: 46.7% (n=615).
-- Scored **2026-06-16** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 55.3% (n=228).
+- Scored **2026-03-20** · v0.5_expanded_universe, graded **120d** later — 515 stocks.
+  - Beat their sector: top-rated only 6 names, too few to score (needs 20), bottom-rated 42.5% (n=287).
+- Scored **2026-08-13** · v0.5_expanded_universe, graded **20d** later — 1513 stocks.
+  - Beat their sector: top-rated only 16 names, too few to score (needs 20), bottom-rated 46.7% (n=615).
+- Scored **2026-06-16** · v0.5_expanded_universe, graded **60d** later — 515 stocks.
+  - Beat their sector: top-rated only 3 names, too few to score (needs 20), bottom-rated 55.3% (n=228).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -85,7 +242,7 @@ _Warnings: 1 ticker(s) failed price fetch; 7 ticker(s) skipped (stale / no data)
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | HCI | Financials | 80.3 | strong | 56d |
 | 2 | RNR | Financials | 80.2 | strong | 54d |
@@ -105,13 +262,17 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- Scored **2026-09-02** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 45.3% (n=878).
+- Scored **2026-09-02** · v0.5_expanded_universe, graded **5d** later — 1514 stocks.
+  - Beat their sector: top-rated only 5 names, too few to score (needs 20), bottom-rated 45.3% (n=878).
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-19** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 40.7% (n=273).
-- Scored **2026-08-12** · v0.5_expanded_universe, graded **20d** later — 1512 stocks. Top-rated: only 17 names, too few to score (needs 20). Bottom-rated: 48.7% (n=630).
-- Scored **2026-06-15** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 54.8% (n=228).
+- Scored **2026-03-19** · v0.5_expanded_universe, graded **120d** later — 515 stocks.
+  - Beat their sector: top-rated only 6 names, too few to score (needs 20), bottom-rated 40.7% (n=273).
+- Scored **2026-08-12** · v0.5_expanded_universe, graded **20d** later — 1512 stocks.
+  - Beat their sector: top-rated only 17 names, too few to score (needs 20), bottom-rated 48.7% (n=630).
+- Scored **2026-06-15** · v0.5_expanded_universe, graded **60d** later — 515 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 54.8% (n=228).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -158,7 +319,7 @@ _Warnings: recovered missed day; fundamentals as of 2026-09-10, excluded from fa
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | DINO | Energy | 86.4 | strong | — |
 | 2 | APA | Energy | 85.3 | strong | — |
@@ -178,13 +339,17 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- Scored **2026-09-01** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 47.8% (n=913).
+- Scored **2026-09-01** · v0.5_expanded_universe, graded **5d** later — 1514 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 47.8% (n=913).
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-18** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 40.8% (n=272).
-- Scored **2026-08-11** · v0.5_expanded_universe, graded **20d** later — 1511 stocks. Top-rated: only 15 names, too few to score (needs 20). Bottom-rated: 51.8% (n=626).
-- Scored **2026-06-12** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 54.5% (n=231).
+- Scored **2026-03-18** · v0.5_expanded_universe, graded **120d** later — 515 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 40.8% (n=272).
+- Scored **2026-08-11** · v0.5_expanded_universe, graded **20d** later — 1511 stocks.
+  - Beat their sector: top-rated only 15 names, too few to score (needs 20), bottom-rated 51.8% (n=626).
+- Scored **2026-06-12** · v0.5_expanded_universe, graded **60d** later — 515 stocks.
+  - Beat their sector: top-rated only 5 names, too few to score (needs 20), bottom-rated 54.5% (n=231).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -230,7 +395,7 @@ _Warnings: 1 ticker(s) failed price fetch; 7 ticker(s) skipped (stale / no data)
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | TSM | Semiconductors | 80.6 | strong | 37d |
 | 2 | MRP | Real Estate | 80.2 | strong | 64d |
@@ -250,13 +415,17 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- Scored **2026-08-31** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 47.0% (n=885).
+- Scored **2026-08-31** · v0.5_expanded_universe, graded **5d** later — 1514 stocks.
+  - Beat their sector: top-rated only 1 name, too few to score (needs 20), bottom-rated 47.0% (n=885).
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-17** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 7 names, too few to score (needs 20). Bottom-rated: 43.5% (n=262).
-- Scored **2026-08-10** · v0.5_expanded_universe, graded **20d** later — 1511 stocks. Top-rated: only 14 names, too few to score (needs 20). Bottom-rated: 49.7% (n=638).
-- Scored **2026-06-11** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 52.0% (n=248).
+- Scored **2026-03-17** · v0.5_expanded_universe, graded **120d** later — 515 stocks.
+  - Beat their sector: top-rated only 7 names, too few to score (needs 20), bottom-rated 43.5% (n=262).
+- Scored **2026-08-10** · v0.5_expanded_universe, graded **20d** later — 1511 stocks.
+  - Beat their sector: top-rated only 14 names, too few to score (needs 20), bottom-rated 49.7% (n=638).
+- Scored **2026-06-11** · v0.5_expanded_universe, graded **60d** later — 515 stocks.
+  - Beat their sector: top-rated only 3 names, too few to score (needs 20), bottom-rated 52.0% (n=248).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -300,7 +469,7 @@ _Warnings: 1 ticker(s) failed price fetch; 7 ticker(s) skipped (stale / no data)
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | MRP | Real Estate | 82.8 | strong | 64d |
 | 2 | REGN | Health Care | 80.4 | strong | 50d |
@@ -320,13 +489,17 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- Scored **2026-08-28** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 50.4% (n=834).
+- Scored **2026-08-28** · v0.5_expanded_universe, graded **5d** later — 1514 stocks.
+  - Beat their sector: top-rated only 2 names, too few to score (needs 20), bottom-rated 50.4% (n=834).
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-16** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 47.9% (n=261).
-- Scored **2026-08-07** · v0.5_expanded_universe, graded **20d** later — 1511 stocks. Top-rated: only 15 names, too few to score (needs 20). Bottom-rated: 45.1% (n=599).
-- Scored **2026-06-10** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 53.6% (n=261).
+- Scored **2026-03-16** · v0.5_expanded_universe, graded **120d** later — 515 stocks.
+  - Beat their sector: top-rated only 6 names, too few to score (needs 20), bottom-rated 47.9% (n=261).
+- Scored **2026-08-07** · v0.5_expanded_universe, graded **20d** later — 1511 stocks.
+  - Beat their sector: top-rated only 15 names, too few to score (needs 20), bottom-rated 45.1% (n=599).
+- Scored **2026-06-10** · v0.5_expanded_universe, graded **60d** later — 515 stocks.
+  - Beat their sector: top-rated only 2 names, too few to score (needs 20), bottom-rated 53.6% (n=261).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -370,7 +543,7 @@ _Warnings: 1 ticker(s) failed price fetch; 7 ticker(s) skipped (stale / no data)
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | REGN | Health Care | 82.3 | strong | 54d |
 | 2 | ESNT | Financials | 81.5 | strong | 63d |
@@ -390,13 +563,17 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- Scored **2026-08-27** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: no names in this bucket. Bottom-rated: 50.4% (n=838).
+- Scored **2026-08-27** · v0.5_expanded_universe, graded **5d** later — 1514 stocks.
+  - Beat their sector: top-rated no names in this bucket, bottom-rated 50.4% (n=838).
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-13** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 46.6% (n=268).
-- Scored **2026-08-06** · v0.5_expanded_universe, graded **20d** later — 1511 stocks. Top-rated: 50.0% (n=20). Bottom-rated: 45.5% (n=624).
-- Scored **2026-06-09** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 54.2% (n=249).
+- Scored **2026-03-13** · v0.5_expanded_universe, graded **120d** later — 515 stocks.
+  - Beat their sector: top-rated only 5 names, too few to score (needs 20), bottom-rated 46.6% (n=268).
+- Scored **2026-08-06** · v0.5_expanded_universe, graded **20d** later — 1511 stocks.
+  - Beat their sector: top-rated 50.0% (n=20), bottom-rated 45.5% (n=624).
+- Scored **2026-06-09** · v0.5_expanded_universe, graded **60d** later — 515 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 54.2% (n=249).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -441,7 +618,7 @@ _Warnings: 1 ticker(s) failed price fetch; 6 ticker(s) skipped (stale / no data)
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | CF | Materials | 82.0 | strong | 62d |
 | 2 | HCI | Financials | 81.4 | strong | 63d |
@@ -461,13 +638,17 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- Scored **2026-08-26** · v0.5_expanded_universe, graded **5d** later — 1515 stocks. Top-rated: no names in this bucket. Bottom-rated: 47.1% (n=805).
+- Scored **2026-08-26** · v0.5_expanded_universe, graded **5d** later — 1515 stocks.
+  - Beat their sector: top-rated no names in this bucket, bottom-rated 47.1% (n=805).
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-12** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 46.3% (n=268).
-- Scored **2026-08-05** · v0.5_expanded_universe, graded **20d** later — 1511 stocks. Top-rated: only 15 names, too few to score (needs 20). Bottom-rated: 44.5% (n=582).
-- Scored **2026-06-08** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 56.5% (n=262).
+- Scored **2026-03-12** · v0.5_expanded_universe, graded **120d** later — 515 stocks.
+  - Beat their sector: top-rated only 3 names, too few to score (needs 20), bottom-rated 46.3% (n=268).
+- Scored **2026-08-05** · v0.5_expanded_universe, graded **20d** later — 1511 stocks.
+  - Beat their sector: top-rated only 15 names, too few to score (needs 20), bottom-rated 44.5% (n=582).
+- Scored **2026-06-08** · v0.5_expanded_universe, graded **60d** later — 515 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 56.5% (n=262).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -511,7 +692,7 @@ _Warnings: 1 ticker(s) failed price fetch; 6 ticker(s) skipped (stale / no data)
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | HCI | Financials | 81.7 | strong | 64d |
 | 2 | RNR | Financials | 80.2 | strong | 62d |
@@ -531,13 +712,17 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- Scored **2026-08-25** · v0.5_expanded_universe, graded **5d** later — 1515 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 48.6% (n=797).
+- Scored **2026-08-25** · v0.5_expanded_universe, graded **5d** later — 1515 stocks.
+  - Beat their sector: top-rated only 3 names, too few to score (needs 20), bottom-rated 48.6% (n=797).
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-11** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 45.5% (n=255).
-- Scored **2026-08-04** · v0.5_expanded_universe, graded **20d** later — 1511 stocks. Top-rated: only 15 names, too few to score (needs 20). Bottom-rated: 45.6% (n=559).
-- Scored **2026-06-05** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 58.8% (n=250).
+- Scored **2026-03-11** · v0.5_expanded_universe, graded **120d** later — 515 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 45.5% (n=255).
+- Scored **2026-08-04** · v0.5_expanded_universe, graded **20d** later — 1511 stocks.
+  - Beat their sector: top-rated only 15 names, too few to score (needs 20), bottom-rated 45.6% (n=559).
+- Scored **2026-06-05** · v0.5_expanded_universe, graded **60d** later — 515 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 58.8% (n=250).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -582,7 +767,7 @@ _Warnings: 1 ticker(s) failed price fetch; 6 ticker(s) skipped (stale / no data)
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | HCI | Financials | 79.9 | decent | 66d |
 | 2 | RNR | Financials | 79.1 | decent | 64d |
@@ -606,9 +791,12 @@ _None matured today._
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-10** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 46.9% (n=254).
-- Scored **2026-08-03** · v0.5_expanded_universe, graded **20d** later — 1511 stocks. Top-rated: 50.0% (n=20). Bottom-rated: 44.8% (n=614).
-- Scored **2026-06-04** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 63.6% (n=264).
+- Scored **2026-03-10** · v0.5_expanded_universe, graded **120d** later — 515 stocks.
+  - Beat their sector: top-rated only 6 names, too few to score (needs 20), bottom-rated 46.9% (n=254).
+- Scored **2026-08-03** · v0.5_expanded_universe, graded **20d** later — 1511 stocks.
+  - Beat their sector: top-rated 50.0% (n=20), bottom-rated 44.8% (n=614).
+- Scored **2026-06-04** · v0.5_expanded_universe, graded **60d** later — 515 stocks.
+  - Beat their sector: top-rated only 5 names, too few to score (needs 20), bottom-rated 63.6% (n=264).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -659,7 +847,7 @@ _Warnings: 1 ticker(s) failed price fetch; 6 ticker(s) skipped (stale / no data)
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | MRP | Real Estate | 81.0 | strong | 73d |
 | 2 | RNR | Financials | 79.6 | decent | 65d |
@@ -679,13 +867,17 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- Scored **2026-08-21** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 49.4% (n=798).
+- Scored **2026-08-21** · v0.5_expanded_universe, graded **5d** later — 1514 stocks.
+  - Beat their sector: top-rated only 3 names, too few to score (needs 20), bottom-rated 49.4% (n=798).
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-09** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 7 names, too few to score (needs 20). Bottom-rated: 45.6% (n=248).
-- Scored **2026-07-31** · v0.5_expanded_universe, graded **20d** later — 517 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 44.7% (n=246).
-- Scored **2026-06-03** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 61.1% (n=270).
+- Scored **2026-03-09** · v0.5_expanded_universe, graded **120d** later — 515 stocks.
+  - Beat their sector: top-rated only 7 names, too few to score (needs 20), bottom-rated 45.6% (n=248).
+- Scored **2026-07-31** · v0.5_expanded_universe, graded **20d** later — 517 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 44.7% (n=246).
+- Scored **2026-06-03** · v0.5_expanded_universe, graded **60d** later — 515 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 61.1% (n=270).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -736,7 +928,7 @@ _Warnings: 1 ticker(s) failed price fetch; 6 ticker(s) skipped (stale / no data)
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | MRP | Real Estate | 81.2 | strong | 76d |
 | 2 | JLL | Real Estate | 80.7 | strong | 69d |
@@ -756,13 +948,17 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions** (v0.5_expanded_universe)
 
-- Scored **2026-08-20** · v0.5_expanded_universe, graded **5d** later — 1514 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 44.1% (n=817).
+- Scored **2026-08-20** · v0.5_expanded_universe, graded **5d** later — 1514 stocks.
+  - Beat their sector: top-rated only 6 names, too few to score (needs 20), bottom-rated 44.1% (n=817).
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-06** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 7 names, too few to score (needs 20). Bottom-rated: 44.5% (n=245).
-- Scored **2026-07-30** · v0.5_expanded_universe, graded **20d** later — 517 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 45.2% (n=230).
-- Scored **2026-06-02** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 58.8% (n=274).
+- Scored **2026-03-06** · v0.5_expanded_universe, graded **120d** later — 515 stocks.
+  - Beat their sector: top-rated only 7 names, too few to score (needs 20), bottom-rated 44.5% (n=245).
+- Scored **2026-07-30** · v0.5_expanded_universe, graded **20d** later — 517 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 45.2% (n=230).
+- Scored **2026-06-02** · v0.5_expanded_universe, graded **60d** later — 515 stocks.
+  - Beat their sector: top-rated only 3 names, too few to score (needs 20), bottom-rated 58.8% (n=274).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -813,7 +1009,7 @@ _Warnings: 1 ticker(s) failed price fetch; 5 ticker(s) skipped (stale / no data)
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | MRP | Real Estate | 82.3 | strong | — |
 | 2 | JLL | Real Estate | 81.7 | strong | — |
@@ -837,10 +1033,14 @@ _None matured today._
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-05** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 7 names, too few to score (needs 20). Bottom-rated: 42.1% (n=240).
-- Scored **2026-07-29** · v0.5_expanded_universe, graded **20d** later — 517 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 48.6% (n=218).
-- Scored **2026-08-19** · v0.5_expanded_universe, graded **5d** later — 1515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 46.7% (n=732).
-- Scored **2026-06-01** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 57.4% (n=270).
+- Scored **2026-03-05** · v0.5_expanded_universe, graded **120d** later — 515 stocks.
+  - Beat their sector: top-rated only 7 names, too few to score (needs 20), bottom-rated 42.1% (n=240).
+- Scored **2026-07-29** · v0.5_expanded_universe, graded **20d** later — 517 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 48.6% (n=218).
+- Scored **2026-08-19** · v0.5_expanded_universe, graded **5d** later — 1515 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 46.7% (n=732).
+- Scored **2026-06-01** · v0.5_expanded_universe, graded **60d** later — 515 stocks.
+  - Beat their sector: top-rated only 5 names, too few to score (needs 20), bottom-rated 57.4% (n=270).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -884,7 +1084,7 @@ _Warnings: 1 ticker(s) failed price fetch; 5 ticker(s) skipped (stale / no data)
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | NMIH | Financials | 82.5 | strong | — |
 | 2 | MRP | Real Estate | 81.6 | strong | — |
@@ -908,10 +1108,14 @@ _None matured today._
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-04** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 9 names, too few to score (needs 20). Bottom-rated: 46.8% (n=233).
-- Scored **2026-07-28** · v0.5_expanded_universe, graded **20d** later — 517 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 45.6% (n=206).
-- Scored **2026-08-18** · v0.5_expanded_universe, graded **5d** later — 1515 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 53.5% (n=778).
-- Scored **2026-05-29** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 58.1% (n=253).
+- Scored **2026-03-04** · v0.5_expanded_universe, graded **120d** later — 515 stocks.
+  - Beat their sector: top-rated only 9 names, too few to score (needs 20), bottom-rated 46.8% (n=233).
+- Scored **2026-07-28** · v0.5_expanded_universe, graded **20d** later — 517 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 45.6% (n=206).
+- Scored **2026-08-18** · v0.5_expanded_universe, graded **5d** later — 1515 stocks.
+  - Beat their sector: top-rated only 6 names, too few to score (needs 20), bottom-rated 53.5% (n=778).
+- Scored **2026-05-29** · v0.5_expanded_universe, graded **60d** later — 515 stocks.
+  - Beat their sector: top-rated only 5 names, too few to score (needs 20), bottom-rated 58.1% (n=253).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -956,7 +1160,7 @@ _Warnings: recovered missed day; fundamentals as of 2026-08-25, excluded from fa
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | NMIH | Financials | 82.3 | strong | — |
 | 2 | JLL | Real Estate | 81.1 | strong | — |
@@ -980,10 +1184,14 @@ _None matured today._
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-03** · v0.5_expanded_universe, graded **120d** later — 515 stocks. Top-rated: only 8 names, too few to score (needs 20). Bottom-rated: 45.8% (n=225).
-- Scored **2026-07-27** · v0.5_expanded_universe, graded **20d** later — 1512 stocks. Top-rated: only 14 names, too few to score (needs 20). Bottom-rated: 46.9% (n=620).
-- Scored **2026-08-17** · v0.5_expanded_universe, graded **5d** later — 1515 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 64.1% (n=728).
-- Scored **2026-05-28** · v0.5_expanded_universe, graded **60d** later — 515 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 60.4% (n=250).
+- Scored **2026-03-03** · v0.5_expanded_universe, graded **120d** later — 515 stocks.
+  - Beat their sector: top-rated only 8 names, too few to score (needs 20), bottom-rated 45.8% (n=225).
+- Scored **2026-07-27** · v0.5_expanded_universe, graded **20d** later — 1512 stocks.
+  - Beat their sector: top-rated only 14 names, too few to score (needs 20), bottom-rated 46.9% (n=620).
+- Scored **2026-08-17** · v0.5_expanded_universe, graded **5d** later — 1515 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 64.1% (n=728).
+- Scored **2026-05-28** · v0.5_expanded_universe, graded **60d** later — 515 stocks.
+  - Beat their sector: top-rated only 6 names, too few to score (needs 20), bottom-rated 60.4% (n=250).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -1027,7 +1235,7 @@ _Run: regenerated from stored snapshots (original run metrics not recorded)._
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | NMIH | Financials | 82.2 | strong | — |
 | 2 | JLL | Real Estate | 82.1 | strong | — |
@@ -1051,10 +1259,14 @@ _None matured today._
 
 **Simulated — same model, backfilled over history**
 
-- Scored **2026-03-02** · v0.5_expanded_universe, graded **120d** later — 904 stocks. Top-rated: 33.3% (n=24). Bottom-rated: 49.7% (n=394).
-- Scored **2026-07-24** · v0.5_expanded_universe, graded **20d** later — 1514 stocks. Top-rated: only 15 names, too few to score (needs 20). Bottom-rated: 49.5% (n=646).
-- Scored **2026-08-14** · v0.5_expanded_universe, graded **5d** later — 1517 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 53.0% (n=696).
-- Scored **2026-05-27** · v0.5_expanded_universe, graded **60d** later — 904 stocks. Top-rated: only 12 names, too few to score (needs 20). Bottom-rated: 58.3% (n=422).
+- Scored **2026-03-02** · v0.5_expanded_universe, graded **120d** later — 904 stocks.
+  - Beat their sector: top-rated 33.3% (n=24), bottom-rated 49.7% (n=394).
+- Scored **2026-07-24** · v0.5_expanded_universe, graded **20d** later — 1514 stocks.
+  - Beat their sector: top-rated only 15 names, too few to score (needs 20), bottom-rated 49.5% (n=646).
+- Scored **2026-08-14** · v0.5_expanded_universe, graded **5d** later — 1517 stocks.
+  - Beat their sector: top-rated only 3 names, too few to score (needs 20), bottom-rated 53.0% (n=696).
+- Scored **2026-05-27** · v0.5_expanded_universe, graded **60d** later — 904 stocks.
+  - Beat their sector: top-rated only 12 names, too few to score (needs 20), bottom-rated 58.3% (n=422).
 
 _Simulated cohorts are this exact model scored point-in-time on an earlier date, so they show how it is performing in the CURRENT market regime rather than waiting for a live track record to accrue. They are reconstructions: no slippage, no missed fills, and the universe is as constituted today._
 
@@ -1098,7 +1310,7 @@ _Warnings: 1 ticker(s) failed price fetch_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | JLL | Real Estate | 81.7 | strong | — |
 | 2 | NMIH | Financials | 81.5 | strong | — |
@@ -1160,7 +1372,7 @@ _Warnings: 1 ticker(s) failed price fetch; 4 ticker(s) skipped (stale / no data)
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | SAFT | Financials | 92.1 | strong | — |
 | 2 | ITGR | Health Care | 91.7 | strong | — |
@@ -1180,8 +1392,10 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-22** · v0.3_sector_neutral, graded **20d** later — 514 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 58.3% (n=247).
-- Scored **2026-08-12** · v0.3_sector_neutral, graded **5d** later — 515 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 53.7% (n=246).
+- Scored **2026-07-22** · v0.3_sector_neutral, graded **20d** later — 514 stocks.
+  - Beat their sector: top-rated only 5 names, too few to score (needs 20), bottom-rated 58.3% (n=247).
+- Scored **2026-08-12** · v0.3_sector_neutral, graded **5d** later — 515 stocks.
+  - Beat their sector: top-rated only 1 name, too few to score (needs 20), bottom-rated 53.7% (n=246).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1224,7 +1438,7 @@ _Warnings: recovered missed day; fundamentals as of 2026-08-19, excluded from fa
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | SCHW | Financials | 78.7 | decent | — |
 | 2 | BAC | Financials | 78.3 | decent | — |
@@ -1244,8 +1458,10 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-21** · v0.3_sector_neutral, graded **20d** later — 515 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 58.0% (n=269).
-- Scored **2026-08-11** · v0.3_sector_neutral, graded **5d** later — 516 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 46.7% (n=240).
+- Scored **2026-07-21** · v0.3_sector_neutral, graded **20d** later — 515 stocks.
+  - Beat their sector: top-rated only 5 names, too few to score (needs 20), bottom-rated 58.0% (n=269).
+- Scored **2026-08-11** · v0.3_sector_neutral, graded **5d** later — 516 stocks.
+  - Beat their sector: top-rated only 1 name, too few to score (needs 20), bottom-rated 46.7% (n=240).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1287,7 +1503,7 @@ _Warnings: 2 ticker(s) skipped (stale / no data)_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | NUE | Materials | 78.3 | decent | 70d |
 | 2 | BAC | Financials | 78.1 | decent | 58d |
@@ -1307,7 +1523,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-08-10** · v0.3_sector_neutral, graded **5d** later — 516 stocks. Top-rated: no names in this bucket. Bottom-rated: 49.1% (n=232).
+- Scored **2026-08-10** · v0.3_sector_neutral, graded **5d** later — 516 stocks.
+  - Beat their sector: top-rated no names in this bucket, bottom-rated 49.1% (n=232).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1349,7 +1566,7 @@ _Warnings: 1 ticker(s) skipped (stale / no data)_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | JPM | Financials | 77.5 | decent | 58d |
 | 2 | BAC | Financials | 77.3 | decent | 59d |
@@ -1369,8 +1586,10 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-17** · v0.3_sector_neutral, graded **20d** later — 516 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 62.6% (n=257).
-- Scored **2026-08-07** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: no names in this bucket. Bottom-rated: 50.9% (n=232).
+- Scored **2026-07-17** · v0.3_sector_neutral, graded **20d** later — 516 stocks.
+  - Beat their sector: top-rated only 5 names, too few to score (needs 20), bottom-rated 62.6% (n=257).
+- Scored **2026-08-07** · v0.3_sector_neutral, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated no names in this bucket, bottom-rated 50.9% (n=232).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1413,7 +1632,7 @@ _Warnings: recovered missed day; fundamentals as of 2026-08-16, excluded from fa
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | JPM | Financials | 77.6 | decent | — |
 | 2 | BAC | Financials | 77.3 | decent | — |
@@ -1433,8 +1652,10 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-16** · v0.3_sector_neutral, graded **20d** later — 516 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 64.4% (n=225).
-- Scored **2026-08-06** · v0.3_sector_neutral, graded **5d** later — 516 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 53.1% (n=241).
+- Scored **2026-07-16** · v0.3_sector_neutral, graded **20d** later — 516 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 64.4% (n=225).
+- Scored **2026-08-06** · v0.3_sector_neutral, graded **5d** later — 516 stocks.
+  - Beat their sector: top-rated only 1 name, too few to score (needs 20), bottom-rated 53.1% (n=241).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1476,7 +1697,7 @@ _Warnings: 1 ticker(s) skipped (stale / no data)_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | BAC | Financials | 78.4 | decent | 63d |
 | 2 | JPM | Financials | 77.6 | decent | 62d |
@@ -1496,8 +1717,10 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-15** · v0.3_sector_neutral, graded **20d** later — 516 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 62.7% (n=249).
-- Scored **2026-08-05** · v0.3_sector_neutral, graded **5d** later — 516 stocks. Top-rated: no names in this bucket. Bottom-rated: 48.7% (n=273).
+- Scored **2026-07-15** · v0.3_sector_neutral, graded **20d** later — 516 stocks.
+  - Beat their sector: top-rated only 5 names, too few to score (needs 20), bottom-rated 62.7% (n=249).
+- Scored **2026-08-05** · v0.3_sector_neutral, graded **5d** later — 516 stocks.
+  - Beat their sector: top-rated no names in this bucket, bottom-rated 48.7% (n=273).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1539,7 +1762,7 @@ _Warnings: 1 ticker(s) skipped (stale / no data)_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | GRMN | Consumer Discretionary | 77.6 | decent | 78d |
 | 2 | BAC | Financials | 77.6 | decent | 64d |
@@ -1559,7 +1782,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-08-04** · v0.3_sector_neutral, graded **5d** later — 516 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 49.8% (n=281).
+- Scored **2026-08-04** · v0.3_sector_neutral, graded **5d** later — 516 stocks.
+  - Beat their sector: top-rated only 1 name, too few to score (needs 20), bottom-rated 49.8% (n=281).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1601,7 +1825,7 @@ _Warnings: 1 ticker(s) skipped (stale / no data)_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 80.1 | strong | 86d |
 | 2 | BAC | Financials | 79.1 | decent | 65d |
@@ -1621,8 +1845,10 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-13** · v0.3_sector_neutral, graded **20d** later — 516 stocks. Top-rated: only 3 names, too few to score (needs 20). Bottom-rated: 63.4% (n=232).
-- Scored **2026-08-03** · v0.3_sector_neutral, graded **5d** later — 516 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 51.5% (n=305).
+- Scored **2026-07-13** · v0.3_sector_neutral, graded **20d** later — 516 stocks.
+  - Beat their sector: top-rated only 3 names, too few to score (needs 20), bottom-rated 63.4% (n=232).
+- Scored **2026-08-03** · v0.3_sector_neutral, graded **5d** later — 516 stocks.
+  - Beat their sector: top-rated only 1 name, too few to score (needs 20), bottom-rated 51.5% (n=305).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1663,7 +1889,7 @@ _Run: scored 521 tickers in 539.1s · fetch fresh=520 / cached=1 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 79.9 | decent | 87d |
 | 2 | TRV | Financials | 79.9 | decent | 67d |
@@ -1683,8 +1909,10 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-10** · v0.3_sector_neutral, graded **20d** later — 517 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 68.1% (n=204).
-- Scored **2026-07-31** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: no names in this bucket. Bottom-rated: 59.3% (n=312).
+- Scored **2026-07-10** · v0.3_sector_neutral, graded **20d** later — 517 stocks.
+  - Beat their sector: top-rated only 2 names, too few to score (needs 20), bottom-rated 68.1% (n=204).
+- Scored **2026-07-31** · v0.3_sector_neutral, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated no names in this bucket, bottom-rated 59.3% (n=312).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1726,7 +1954,7 @@ _Warnings: 1 ticker(s) skipped (stale / no data)_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 84.0 | strong | 90d |
 | 2 | TRV | Financials | 80.8 | strong | 70d |
@@ -1746,7 +1974,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-09** · v0.3_sector_neutral, graded **20d** later — 516 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 65.3% (n=222).
+- Scored **2026-07-09** · v0.3_sector_neutral, graded **20d** later — 516 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 65.3% (n=222).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1788,7 +2017,7 @@ _Warnings: 1 ticker(s) skipped (stale / no data)_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | NUE | Materials | 79.4 | decent | 82d |
 | 2 | TRV | Financials | 79.0 | decent | 71d |
@@ -1808,8 +2037,10 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-08** · v0.3_sector_neutral, graded **20d** later — 516 stocks. Top-rated: only 5 names, too few to score (needs 20). Bottom-rated: 60.3% (n=224).
-- Scored **2026-07-29** · v0.3_sector_neutral, graded **5d** later — 516 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 53.4% (n=279).
+- Scored **2026-07-08** · v0.3_sector_neutral, graded **20d** later — 516 stocks.
+  - Beat their sector: top-rated only 5 names, too few to score (needs 20), bottom-rated 60.3% (n=224).
+- Scored **2026-07-29** · v0.3_sector_neutral, graded **5d** later — 516 stocks.
+  - Beat their sector: top-rated only 2 names, too few to score (needs 20), bottom-rated 53.4% (n=279).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1850,7 +2081,7 @@ _Run: scored 520 tickers in 496.8s · fetch fresh=520 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | BMY | Health Care | 79.2 | decent | 86d |
 | 2 | BAC | Financials | 78.1 | decent | 71d |
@@ -1870,8 +2101,10 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-07** · v0.3_sector_neutral, graded **20d** later — 517 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 64.5% (n=203).
-- Scored **2026-07-28** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 57.5% (n=280).
+- Scored **2026-07-07** · v0.3_sector_neutral, graded **20d** later — 517 stocks.
+  - Beat their sector: top-rated only 6 names, too few to score (needs 20), bottom-rated 64.5% (n=203).
+- Scored **2026-07-28** · v0.3_sector_neutral, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated only 1 name, too few to score (needs 20), bottom-rated 57.5% (n=280).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1912,7 +2145,7 @@ _Run: scored 520 tickers in 487.8s · fetch fresh=520 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | BMY | Health Care | 79.8 | decent | 87d |
 | 2 | TRV | Financials | 78.6 | decent | 73d |
@@ -1932,7 +2165,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-27** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: no names in this bucket. Bottom-rated: 52.7% (n=317).
+- Scored **2026-07-27** · v0.3_sector_neutral, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated no names in this bucket, bottom-rated 52.7% (n=317).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -1973,7 +2207,7 @@ _Run: scored 520 tickers in 484.6s · fetch fresh=520 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | BAC | Financials | 79.0 | decent | 72d |
 | 2 | TRV | Financials | 78.9 | decent | 73d |
@@ -1993,8 +2227,10 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-02** · v0.2_fundamentals_added, graded **20d** later — 517 stocks. Top-rated: only 9 names, too few to score (needs 20). Bottom-rated: 65.5% (n=226).
-- Scored **2026-07-24** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 57.4% (n=329).
+- Scored **2026-07-02** · v0.2_fundamentals_added, graded **20d** later — 517 stocks.
+  - Beat their sector: top-rated only 9 names, too few to score (needs 20), bottom-rated 65.5% (n=226).
+- Scored **2026-07-24** · v0.3_sector_neutral, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated only 1 name, too few to score (needs 20), bottom-rated 57.4% (n=329).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -2037,7 +2273,7 @@ _Warnings: recovered missed day; fundamentals as of 2026-07-31, excluded from fa
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 82.6 | strong | — |
 | 2 | TRV | Financials | 80.0 | strong | — |
@@ -2057,7 +2293,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-01** · v0.2_fundamentals_added, graded **20d** later — 517 stocks. Top-rated: only 10 names, too few to score (needs 20). Bottom-rated: 68.0% (n=228).
+- Scored **2026-07-01** · v0.2_fundamentals_added, graded **20d** later — 517 stocks.
+  - Beat their sector: top-rated only 10 names, too few to score (needs 20), bottom-rated 68.0% (n=228).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -2098,7 +2335,7 @@ _Run: scored 520 tickers in 607.9s · fetch fresh=520 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 85.4 | strong | 7d |
 | 2 | TRV | Financials | 81.7 | strong | 78d |
@@ -2118,7 +2355,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-22** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 65.0% (n=280).
+- Scored **2026-07-22** · v0.3_sector_neutral, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 65.0% (n=280).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -2159,7 +2397,7 @@ _Run: scored 520 tickers in 474.5s · fetch fresh=520 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 83.9 | strong | 8d |
 | 2 | TRV | Financials | 82.0 | strong | 79d |
@@ -2179,7 +2417,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-21** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 62.9% (n=283).
+- Scored **2026-07-21** · v0.3_sector_neutral, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated only 1 name, too few to score (needs 20), bottom-rated 62.9% (n=283).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -2220,7 +2459,7 @@ _Run: scored 520 tickers in 471.5s · fetch fresh=520 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | TRV | Financials | 82.8 | strong | 80d |
 | 2 | ALL | Financials | 82.8 | strong | 9d |
@@ -2281,7 +2520,7 @@ _Run: scored 520 tickers in 477.7s · fetch fresh=520 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 84.4 | strong | 10d |
 | 2 | TRV | Financials | 82.7 | strong | 81d |
@@ -2301,7 +2540,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-17** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 53.9% (n=282).
+- Scored **2026-07-17** · v0.3_sector_neutral, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated only 2 names, too few to score (needs 20), bottom-rated 53.9% (n=282).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -2344,7 +2584,7 @@ _Warnings: recovered missed day; fundamentals as of 2026-07-24, excluded from fa
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | EIX | Utilities | 83.9 | strong | — |
 | 2 | ALL | Financials | 83.8 | strong | — |
@@ -2364,7 +2604,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-16** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 56.2% (n=233).
+- Scored **2026-07-16** · v0.3_sector_neutral, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated only 1 name, too few to score (needs 20), bottom-rated 56.2% (n=233).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -2405,7 +2646,7 @@ _Run: scored 520 tickers in 1094.4s · fetch fresh=520 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | EIX | Utilities | 85.1 | strong | — |
 | 2 | TRV | Financials | 82.4 | strong | 85d |
@@ -2425,7 +2666,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-15** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 53.6% (n=263).
+- Scored **2026-07-15** · v0.3_sector_neutral, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated only 1 name, too few to score (needs 20), bottom-rated 53.6% (n=263).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -2466,7 +2708,7 @@ _Run: scored 520 tickers in 1147.4s · fetch fresh=520 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 83.2 | strong | — |
 | 2 | TRV | Financials | 81.7 | strong | 86d |
@@ -2529,7 +2771,7 @@ _Warnings: recovered missed day; fundamentals as of 2026-07-21, excluded from fa
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 84.7 | strong | — |
 | 2 | MO | Consumer Staples | 82.5 | strong | — |
@@ -2549,7 +2791,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-13** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 1 name, too few to score (needs 20). Bottom-rated: 52.8% (n=269).
+- Scored **2026-07-13** · v0.3_sector_neutral, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated only 1 name, too few to score (needs 20), bottom-rated 52.8% (n=269).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -2590,7 +2833,7 @@ _Run: scored 520 tickers in 1716.1s · fetch fresh=519 / cached=1 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 82.9 | strong | — |
 | 2 | TRV | Financials | 82.4 | strong | 88d |
@@ -2610,7 +2853,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-10** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: no names in this bucket. Bottom-rated: 55.6% (n=275).
+- Scored **2026-07-10** · v0.3_sector_neutral, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated no names in this bucket, bottom-rated 55.6% (n=275).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -2651,7 +2895,7 @@ _Run: scored 520 tickers in 1122.2s · fetch fresh=520 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | EIX | Utilities | 83.0 | strong | 14d |
 | 2 | GL | Financials | 81.1 | strong | 6d |
@@ -2671,7 +2915,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-09** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 57.8% (n=263).
+- Scored **2026-07-09** · v0.3_sector_neutral, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated only 2 names, too few to score (needs 20), bottom-rated 57.8% (n=263).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -2712,7 +2957,7 @@ _Run: scored 520 tickers in 1022.2s · fetch fresh=520 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | BAC | Financials | 80.6 | strong | 91d |
 | 2 | GL | Financials | 80.4 | strong | 7d |
@@ -2732,7 +2977,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-08** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 56.4% (n=250).
+- Scored **2026-07-08** · v0.3_sector_neutral, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated only 2 names, too few to score (needs 20), bottom-rated 56.4% (n=250).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -2773,7 +3019,7 @@ _Run: scored 520 tickers in unknown time · fetch fresh=0 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 84.9 | strong | — |
 | 2 | GL | Financials | 79.5 | decent | — |
@@ -2793,7 +3039,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-07** · v0.3_sector_neutral, graded **5d** later — 517 stocks. Top-rated: only 2 names, too few to score (needs 20). Bottom-rated: 58.3% (n=228).
+- Scored **2026-07-07** · v0.3_sector_neutral, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated only 2 names, too few to score (needs 20), bottom-rated 58.3% (n=228).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -2834,7 +3081,7 @@ _Run: scored 520 tickers in 1997.9s · fetch fresh=520 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 86.2 | strong | — |
 | 2 | GL | Financials | 78.9 | decent | 9d |
@@ -2895,7 +3142,7 @@ _Run: scored 520 tickers in 1273.8s · fetch fresh=520 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 85.0 | strong | — |
 | 2 | GL | Financials | 81.2 | strong | 11d |
@@ -2915,7 +3162,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-02** · v0.2_fundamentals_added, graded **5d** later — 517 stocks. Top-rated: only 6 names, too few to score (needs 20). Bottom-rated: 54.8% (n=230).
+- Scored **2026-07-02** · v0.2_fundamentals_added, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated only 6 names, too few to score (needs 20), bottom-rated 54.8% (n=230).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -2956,7 +3204,7 @@ _Run: scored 520 tickers in 1173.9s · fetch fresh=520 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 85.2 | strong | — |
 | 2 | GL | Financials | 82.6 | strong | 13d |
@@ -2976,7 +3224,8 @@ _Research ranking, NOT a buy recommendation._
 
 **Live predictions**
 
-- Scored **2026-07-01** · v0.2_fundamentals_added, graded **5d** later — 517 stocks. Top-rated: only 4 names, too few to score (needs 20). Bottom-rated: 60.6% (n=241).
+- Scored **2026-07-01** · v0.2_fundamentals_added, graded **5d** later — 517 stocks.
+  - Beat their sector: top-rated only 4 names, too few to score (needs 20), bottom-rated 60.6% (n=241).
 
 ### 3. Running scoreboard — cumulative Strong vs Weak hit rate
 
@@ -3017,7 +3266,7 @@ _Run: scored 520 tickers in 1089.4s · fetch fresh=520 / cached=0 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 86.5 | strong | — |
 | 2 | GL | Financials | 82.0 | strong | 14d |
@@ -3078,7 +3327,7 @@ _Run: scored 520 tickers in 212.5s · fetch fresh=0 / cached=520 / failed=0_
 
 _Research ranking, NOT a buy recommendation._
 
-| # | Ticker | Sector | score_20d | Label | Earnings in |
+| # | Ticker | Sector | score | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
 | 1 | ALL | Financials | 84.9 | strong | — |
 | 2 | CINF | Financials | 81.6 | strong | 19d |
@@ -3134,7 +3383,7 @@ _Full panel — includes backfilled rows. Large sample, but the weights were cho
 
 **Run:** scored 520 tickers in 1062.3s · fetch fresh=520 / cached=0 / failed=0
 
-**Top 10 (score_20d):** ALL 87.5, GL 85.6, CINF 85.3, TRV 82.6, USB 82.2, TROW 81.4, BAC 80.5, PNC 80.4, XLV 80.2, CFG 80.0
+**Top 10 (score):** ALL 87.5, GL 85.6, CINF 85.3, TRV 82.6, USB 82.2, TROW 81.4, BAC 80.5, PNC 80.4, XLV 80.2, CFG 80.0
 **vs prev live run (2026-07-01):** entered [XLV] · exited [KEY]
 **Movers:** ↑ BA +23.0, LMT +21.1, NWS +19.8, NKE +16.6, FDS +16.3  ↓ CRWD -40.6, TER -27.1, TSLA -23.9, JBL -23.4, SNDK -21.4
 
@@ -3150,7 +3399,7 @@ _Full panel — includes backfilled rows. Large sample, but the weights were cho
 **Run:** scored 517 tickers in unknown time · fetch fresh=0 / cached=0 / failed=0
 **Fundamentals:** live run
 
-**Top 10 (score_20d):** GL 87.2, ALL 86.8, CINF 84.7, USB 83.3, TRV 82.6, PNC 82.5, CFG 82.4, BAC 81.7, TROW 81.3, KEY 80.8
+**Top 10 (score):** GL 87.2, ALL 86.8, CINF 84.7, USB 83.3, TRV 82.6, PNC 82.5, CFG 82.4, BAC 81.7, TROW 81.3, KEY 80.8
 **vs prev live run:** none yet (first live run for this version)
 
 **Evaluation state:** no evaluable snapshots for this version yet.

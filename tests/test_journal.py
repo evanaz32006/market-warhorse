@@ -29,10 +29,14 @@ def _seed_two_live_runs(db):
     today = {"GL": 87.2, "ALL": 86.8, "CINF": 84.7, "AAPL": 52.1, "MSFT": 34.5}
     for run_date, scores in (("2026-07-01", prev), ("2026-07-04", today)):
         for tkr, s in scores.items():
+            # Seed whichever column the log currently DISPLAYS, so this fixture keeps testing the
+            # real path if the display horizon moves again (it moved 20d -> 120d once the decile
+            # spreads showed 20d carries no signal).
             storage.upsert_feature_snapshot({
                 "run_date": run_date, "ticker": tkr, "benchmark": "SPY",
                 "model_version": "v0.2_fundamentals_added", "backfilled": 0,
-                "earnings_risk_unknown": 1, "score_20d": s, "timestamp_fetched": ts,
+                "earnings_risk_unknown": 1, journal.display_score_column(): s,
+                "timestamp_fetched": ts,
             }, db_path=db)
     return db
 
@@ -103,7 +107,8 @@ def test_first_live_run_has_no_prior_comparison():
         storage.upsert_feature_snapshot({
             "run_date": "2026-07-04", "ticker": tkr, "benchmark": "SPY",
             "model_version": "v0.2_fundamentals_added", "backfilled": 0,
-            "earnings_risk_unknown": 1, "score_20d": s, "timestamp_fetched": "2026-07-04T00:00:00Z",
+            "earnings_risk_unknown": 1, journal.display_score_column(): s,
+            "timestamp_fetched": "2026-07-04T00:00:00Z",
         }, db_path=db)
     entry = journal.run_journal(_run_context(), db_path=db, output_dir=tempfile.mkdtemp())
     mv = entry["todays_rankings"]
@@ -528,7 +533,7 @@ def test_the_spread_is_stated_not_left_as_arithmetic():
          "n": 1513, "strong_hit_pct": 52.1, "strong_n": 41, "weak_hit_pct": 46.7,
          "weak_n": 615, "middle_n": 857, "spread_pts": 5.4, "low_confidence": False}
     line = journal._render_cohort_lines([c])[0]
-    assert "Spread: +5.4 pts" in line
+    assert "Spread: **+5.4 pts**" in line
 
 
 def test_middle_count_is_derived_from_the_graded_total():
@@ -550,3 +555,86 @@ def test_middle_count_is_derived_from_the_graded_total():
     assert c["n"] == 67 and c["strong_n"] == 25 and c["weak_n"] == 30
     assert c["middle_n"] == 12
     assert c["spread_pts"] == round(100.0 - 0.0, 1)
+
+
+def test_cohort_reports_money_not_only_skill():
+    """"Beat its sector" measures whether the RANKING has skill, not whether you made money — a
+    stock down 15% while its sector is down 20% scores as a hit. The owner read the log as a profit
+    report and was misled by exactly that gap.
+
+    So the line leads with the basket a person would actually buy and the two questions they
+    actually have, and labels the sector-relative number as the skill measure it is."""
+    c = {"snapshot_date": "2026-03-24", "model_version": "v0.5", "horizon": "120d",
+         "n": 766, "strong_hit_pct": None, "strong_n": 9, "weak_hit_pct": 46.0,
+         "weak_n": 415, "middle_n": 342, "spread_pts": None, "low_confidence": False,
+         "top_picks": {"top_n": 10, "avg_return_pct": 18.42, "made_money_pct": 90.0,
+                       "avg_vs_index_pct": 7.85, "beat_index_pct": 70.0}}
+    line = journal._render_cohort_lines([c])[0]
+    assert "If you had bought the top 10" in line
+    assert "+18.4%" in line and "made money 90%" in line
+    assert "+7.8% vs SPY" in line
+    assert "Beat their sector" in line, "the skill measure must be labelled, not left unqualified"
+
+
+def test_top_picks_are_graded_instead_of_the_strong_label_band():
+    """The band was the wrong unit and it silently hid the money view entirely.
+
+    "strong" is a fixed threshold (score >= 80). On a real day only 2-16 names clear it, so a
+    per-day bucket almost never reached the 20 needed to report a rate — every money line in the
+    live log rendered as nothing at all. The top-N basket is always exactly N, needs no
+    minimum-sample gate, and is what a person would actually do with a ranked list."""
+    rows = [{"run_date": "D0", "ticker": f"T{i}", "score_120d": float(100 - i),
+             "future_return_120d": 0.10 if i < 8 else -0.05,
+             "future_excess_vs_index_120d": 0.04 if i < 7 else -0.02,
+             "future_excess_return_120d": 0.01} for i in range(40)]
+    tp = journal._grade_top_picks(rows, 120, top_n=10)
+    assert tp["top_n"] == 10
+    assert tp["made_money_pct"] == 80.0          # 8 of the 10 highest-scored were up
+    assert tp["beat_index_pct"] == 70.0          # 7 of 10 beat the index
+    assert tp["avg_return_pct"] == round(100 * (8 * 0.10 + 2 * -0.05) / 10, 2)
+    # Only 3 names that can be graded -> the basket cannot be filled, so no number is invented.
+    assert journal._grade_top_picks(rows[:3], 120, top_n=10) is None
+
+
+def test_entered_exited_compares_the_same_column_the_top10_is_ranked_on():
+    """A near-miss when the display horizon moved 20d -> 120d.
+
+    Today's top-10 is ranked on the display column; the previous run's scores were loaded on a
+    hardcoded `score_20d`. Comparing two different rankings reports names as "entered" and "exited"
+    that never moved — daily churn invented out of a column mismatch, with nothing to reveal it."""
+    db = _temp_db()
+    storage.init_db(db)
+    col = journal.display_score_column()
+    other = "score_5d" if col != "score_5d" else "score_20d"
+    # Same ranking on the display column both days; the DECOY column is ordered the opposite way.
+    for run_date in ("2026-07-01", "2026-07-04"):
+        for tkr, s in {"AAA": 90.0, "BBB": 80.0, "CCC": 70.0}.items():
+            storage.upsert_feature_snapshot({
+                "run_date": run_date, "ticker": tkr, "benchmark": "SPY",
+                "model_version": "v0.2_fundamentals_added", "backfilled": 0,
+                "earnings_risk_unknown": 1, col: s, other: 100.0 - s,
+                "timestamp_fetched": "2026-07-04T00:00:00Z",
+            }, db_path=db)
+    entry = journal.run_journal(_run_context(), db_path=db, output_dir=tempfile.mkdtemp())
+    mv = entry["todays_rankings"]
+    assert mv["compared_to_prev_live_run"] == "2026-07-01"
+    assert mv["entered_top_10"] == [] and mv["exited_top_10"] == [], (
+        "the ranking did not change, so nothing entered or exited")
+
+
+def test_benchmark_etfs_are_not_recommended_as_picks():
+    """SMH and QQQ turned up inside the "top 10 picks" for 2026-06-18 — the model recommending the
+    yardstick it is measured against. Section 1 has always excluded benchmark ETFs from its
+    displayed top 10; the basket grading did not, so the log's money numbers described a portfolio
+    nobody would hold.
+
+    They stay in the hit-rate buckets, which are about the ranking as a whole."""
+    rows = [{"run_date": "D0", "ticker": t, "score_60d": s, "future_return_60d": r,
+             "future_excess_vs_index_60d": r, "future_excess_return_60d": 0.0}
+            for t, s, r in [("SMH", 99.0, -0.20), ("QQQ", 98.0, -0.10),
+                            ("AAA", 97.0, 0.30), ("BBB", 96.0, 0.20), ("CCC", 95.0, 0.10)]]
+    with_etfs = journal._grade_top_picks(rows, 60, top_n=3)
+    without = journal._grade_top_picks(rows, 60, top_n=3, exclude=frozenset({"SMH", "QQQ"}))
+    assert with_etfs["made_money_pct"] == round(100 / 3, 1)     # SMH, QQQ drag it down
+    assert without["made_money_pct"] == 100.0                   # the three real names all rose
+    assert without["avg_return_pct"] == 20.0

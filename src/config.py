@@ -207,6 +207,19 @@ PARAMS = {
     # belongs on a different physical device, which is why the path is a CLI argument.
     "backup_dir": "backups",
 
+    # The horizon the daily log RANKS AND DISPLAYS on.
+    #
+    # Was 20d, chosen when the horizons were a guess. Measured on the expanded universe, the
+    # composite's top-decile-minus-bottom-decile spread is -0.1% at 20d and +6.6% at 120d, and the
+    # top-10 basket beats the average stock by -0.3% at 20d versus +10.6% at 120d. The daily list
+    # was therefore showing the owner the one horizon where the model demonstrably does nothing,
+    # every single day, which is most of why it read as useless.
+    #
+    # Every horizon is still scored, stored and graded - this changes what leads the display, not
+    # what is computed. Read it as an honest relabelling: this is a ~6-month tool that had been
+    # presenting itself as a 3-week one.
+    "display_horizon_days": 120,
+
     # --- Shared research plumbing ---------------------------------------------------------------
     "calendar_ticker": "SPY",              # the ONE master session calendar (was a literal in journal.py)
     "research_output_dir": "output/research",

@@ -89,14 +89,19 @@ def _top_tickers(score_map, n=_TOP_N):
     return sorted(score_map.items(), key=lambda kv: kv[1], reverse=True)[:n]
 
 
+def display_score_column():
+    """The score column the daily log ranks on. One definition, read from config."""
+    return "score_%dd" % PARAMS["display_horizon_days"]
+
+
 def _rankings_movement(today_scores, prev_scores, prev_run_date, exclude_from_top=frozenset()):
-    """Top-10 by score_20d today, entries/exits vs the previous LIVE run, and the biggest
+    """Top-10 by the display score today, entries/exits vs the previous LIVE run, and the biggest
     single-day score movers (joined on ticker, never by row position). Tickers in
     exclude_from_top (benchmark ETFs) are dropped from the top-10 and entered/exited pools ONLY —
     movers are still computed over the full universe so a big ETF move is still visible."""
     top_pool = {t: s for t, s in today_scores.items() if t not in exclude_from_top}
     today_top = _top_tickers(top_pool)
-    top_block = [{"ticker": t, "score_20d": round(s, 1)} for t, s in today_top]
+    top_block = [{"ticker": t, "score": round(s, 1)} for t, s in today_top]
 
     entered, exited, movers_up, movers_down = [], [], [], []
     if prev_scores:
@@ -115,7 +120,8 @@ def _rankings_movement(today_scores, prev_scores, prev_run_date, exclude_from_to
         movers_down = [{"ticker": t, "delta": d} for t, d in reversed(deltas[-_MAX_MOVERS:]) if d < 0]
 
     return {
-        "top_10_by_score_20d": top_block,
+        "top_10_by_score": top_block,
+        "score_column": display_score_column(),
         "compared_to_prev_live_run": prev_run_date,
         "entered_top_10": entered,
         "exited_top_10": exited,
@@ -137,7 +143,7 @@ def _earnings_days(row):
 
 
 def _todays_rankings_section(today_rows, today_scores, prev_scores, prev_run_date, sector_map):
-    """Section 1. Top-10 by score_20d for the current run (ticker/sector/score/label/earnings),
+    """Section 1. Top-10 by the DISPLAY score for the current run (ticker/sector/score/label/earnings),
     plus entered/exited vs the previous live run and the biggest single-day movers folded in.
     Benchmark ETFs (sector == ETF_SECTOR_LABEL) are excluded from the top-10 DISPLAY only — they
     stay scored and stored in feature_snapshots, they're just not shown as research picks."""
@@ -145,18 +151,19 @@ def _todays_rankings_section(today_rows, today_scores, prev_scores, prev_run_dat
     movement = _rankings_movement(today_scores, prev_scores, prev_run_date, exclude_from_top=etfs)
     row_by_ticker = {r.get("ticker"): r for r in today_rows}
     top_table = []
-    for item in movement["top_10_by_score_20d"]:
+    for item in movement["top_10_by_score"]:
         t = item["ticker"]
         r = row_by_ticker.get(t, {})
         top_table.append({
             "ticker": t,
             "sector": sector_map.get(t),
-            "score_20d": item["score_20d"],
+            "score": item["score"],
             "label": scoring.label_for_score(today_scores.get(t)),
             "days_until_earnings": _earnings_days(r),
         })
     return {
         "top_10": top_table,
+        "score_column": display_score_column(),
         "compared_to_prev_live_run": movement["compared_to_prev_live_run"],
         "entered_top_10": movement["entered_top_10"],
         "exited_top_10": movement["exited_top_10"],
@@ -166,10 +173,20 @@ def _todays_rankings_section(today_rows, today_scores, prev_scores, prev_run_dat
 
 
 def _grade_cohort(rows, n):
-    """Grade one (snapshot-date, horizon) cohort: bucket each row by label_for_score(score_Nd) and
-    count hits (future_excess_return_Nd > 0) in the Strong and Weak buckets. Returns
-    (n_evaluable, strong_hit_flags, weak_hit_flags)."""
+    """Grade one (snapshot-date, horizon) cohort three ways, because "did it work" has three
+    different honest answers and reporting only one of them misleads.
+
+    A hit on `future_excess_return_Nd` means the stock beat its SECTOR benchmark. That is the right
+    measure of whether the RANKING has skill, and the wrong measure of whether you made money — a
+    stock down 15% while its sector is down 20% scores as a hit.
+
+    So the absolute return and the return against the index you would otherwise have bought are
+    carried alongside. Bucketing is unchanged (it keys on the score, as before); only the number of
+    outcomes recorded per name grows. Returns
+    (n_evaluable, strong_hits, weak_hits, strong_extra, weak_extra) where the `extra` dicts hold the
+    absolute and vs-index hit flags."""
     strong, weak, n_eval = [], [], 0
+    extra = {"strong": {"abs": [], "vs_index": []}, "weak": {"abs": [], "vs_index": []}}
     for r in rows:
         score_n = r.get(f"score_{n}d")
         excess = r.get(f"future_excess_return_{n}d")
@@ -177,14 +194,48 @@ def _grade_cohort(rows, n):
             continue
         n_eval += 1
         label = scoring.label_for_score(score_n)
-        if label == "strong":
-            strong.append(excess > 0)
-        elif label == "weak":
-            weak.append(excess > 0)
-    return n_eval, strong, weak
+        if label not in ("strong", "weak"):
+            continue
+        (strong if label == "strong" else weak).append(excess > 0)
+        absolute = r.get(f"future_return_{n}d")
+        vs_index = r.get(f"future_excess_vs_index_{n}d")
+        if _is_num(absolute):
+            extra[label]["abs"].append(absolute > 0)
+        if _is_num(vs_index):
+            extra[label]["vs_index"].append(vs_index > 0)
+    return n_eval, strong, weak, extra["strong"], extra["weak"]
 
 
-def _grade_all_cohorts(evaluated_rows, trading_calendar):
+def _grade_top_picks(rows, n, top_n=_TOP_N, exclude=frozenset()):
+    """What would have happened to the TOP-N PICKS — the basket a person would actually buy.
+
+    Deliberately not the "strong" label band. That band is a fixed threshold (score >= 80) and on a
+    typical day only 2-16 names clear it, so a per-day bucket almost never reaches the 20 needed to
+    report a rate, and the money view silently never appeared. Top-N is always exactly N, is what
+    anybody would actually do with a ranked list, and needs no minimum-sample gate.
+
+    Returns None when the cohort is too thin to fill the basket."""
+    graded = [r for r in rows
+              if r.get("ticker") not in exclude
+              and _is_num(r.get(f"score_{n}d")) and _is_num(r.get(f"future_return_{n}d"))]
+    if len(graded) < top_n:
+        return None
+    graded.sort(key=lambda r: r[f"score_{n}d"], reverse=True)
+    picks = graded[:top_n]
+    abs_r = [r[f"future_return_{n}d"] for r in picks]
+    idx_r = [r[f"future_excess_vs_index_{n}d"] for r in picks
+             if _is_num(r.get(f"future_excess_vs_index_{n}d"))]
+    return {
+        "top_n": top_n,
+        "avg_return_pct": round(100.0 * sum(abs_r) / len(abs_r), 2),
+        "made_money_pct": round(100.0 * sum(1 for x in abs_r if x > 0) / len(abs_r), 1),
+        "avg_vs_index_pct": (round(100.0 * sum(idx_r) / len(idx_r), 2) if idx_r else None),
+        "beat_index_pct": (round(100.0 * sum(1 for x in idx_r if x > 0) / len(idx_r), 1)
+                           if idx_r else None),
+    }
+
+
+def _grade_all_cohorts(evaluated_rows, trading_calendar, etf_tickers=frozenset()):
     """THE single source of truth for cohort grading — feeds BOTH Section 2 (today's slice) and
     Section 3 (cumulative), so the two can never disagree. A cohort is one (snapshot_date D,
     horizon N) group; for each N it matures on M = calendar[idx(D)+N] once N real sessions have
@@ -192,7 +243,12 @@ def _grade_all_cohorts(evaluated_rows, trading_calendar):
     (live/backfill, from the `backfilled` flag — a live row's run_date is by definition a live date,
     of ANY model version, so grading never resets on a version bump; recovered rows are live). Returns
     a list of dicts: {snapshot_date, model_version, mode, horizon(int), matured_on, n, strong_hits[],
-    weak_hits[]}."""
+    weak_hits[], top_picks}.
+
+    `etf_tickers` are excluded from the TOP-PICKS basket only (never from the hit-rate buckets,
+    which are about the ranking as a whole). Section 1 has always excluded benchmark ETFs from its
+    displayed top 10; the first version of the basket did not, and SMH and QQQ duly turned up among
+    the "picks" for 2026-06-18 — the model recommending the yardstick it is measured against."""
     cal_index = {d: i for i, d in enumerate(trading_calendar)}
     rows_by_key = {}
     # Recovered rows are dropped from BOTH Section 2 and Section 3 here (one filter, so the two can't
@@ -209,7 +265,8 @@ def _grade_all_cohorts(evaluated_rows, trading_calendar):
     for (d, version, mode), rows in rows_by_key.items():
         idx_d = cal_index.get(d)
         for n in evaluation.HORIZONS:
-            n_eval, strong, weak = _grade_cohort(rows, n)
+            n_eval, strong, weak, s_extra, w_extra = _grade_cohort(rows, n)
+            top_picks = _grade_top_picks(rows, n, exclude=etf_tickers)
             if n_eval == 0:
                 continue  # not matured / not gradable at this horizon yet
             matured_on = (trading_calendar[idx_d + n]
@@ -218,6 +275,9 @@ def _grade_all_cohorts(evaluated_rows, trading_calendar):
                 "snapshot_date": d, "model_version": version, "mode": mode,
                 "horizon": n, "matured_on": matured_on, "n": n_eval,
                 "strong_hits": strong, "weak_hits": weak,
+                "strong_abs_hits": s_extra["abs"], "strong_index_hits": s_extra["vs_index"],
+                "weak_abs_hits": w_extra["abs"], "weak_index_hits": w_extra["vs_index"],
+                "top_picks": top_picks,
             })
     return cohorts
 
@@ -254,6 +314,10 @@ def _matured_cohorts_section(cohorts, run_date, mode="live"):
             # extremes made the line read as broken arithmetic - "6 strong vs 287 weak" out of 515
             # leaves 222 names unaccounted for, with nothing saying they exist.
             "middle_n": c["n"] - strong_n - weak_n,
+            # The money view, for the bucket a person would actually act on. Gated on the same
+            # bucket size as the skill measure, so one line cannot show a confident-looking money
+            # number beside a suppressed skill number.
+            "top_picks": c.get("top_picks"),
             # The spread is the actual claim being tested; leaving the reader to subtract two
             # percentages buries it.
             "spread_pts": (round(sh - wh, 1) if (sh is not None and wh is not None) else None),
@@ -463,8 +527,9 @@ def build_journal_entry(run_context, review_df, today_rows, prev_scores, prev_ru
     & 4); Section 2/3 span every version via each row's own backfilled flag + model_version."""
     model_version = run_context.get("model_version")
     run_date = run_context.get("run_date")
-    today_scores = {r.get("ticker"): r.get("score_20d")
-                    for r in today_rows if _is_num(r.get("score_20d"))}
+    col = display_score_column()
+    today_scores = {r.get("ticker"): r.get(col)
+                    for r in today_rows if _is_num(r.get(col))}
     # Filter to the CURRENT version first. evaluated_rows has historically spanned every version
     # (each row carries its own model_version), so grading it wholesale would put an older version's
     # cohorts under the current model's heading.
@@ -474,7 +539,8 @@ def build_journal_entry(run_context, review_df, today_rows, prev_scores, prev_ru
     live_rows = [r for r in cur_rows if not int(r.get("backfilled") or 0)]
     live_review_df = (evaluation.build_performance_review(live_rows, model_version=model_version)
                       if live_rows else None)
-    cohorts = _grade_all_cohorts(cur_rows, trading_calendar)
+    etfs = frozenset(t for t, sec in (sector_map or {}).items() if sec == ETF_SECTOR_LABEL)
+    cohorts = _grade_all_cohorts(cur_rows, trading_calendar, etf_tickers=etfs)
     return {
         "schema": "journal_v2",
         "generated_at": _now_iso(),
@@ -566,13 +632,15 @@ def _render_section1(sec):
              "_Research ranking, NOT a buy recommendation._", ""]
     top = sec.get("top_10", [])
     if top:
-        lines += ["| # | Ticker | Sector | score_20d | Label | Earnings in |",
+        score_label = sec.get("score_column", "score")
+        lines += [f"| # | Ticker | Sector | {score_label} | Label | Earnings in |",
                   "|---|--------|--------|-----------|-------|-------------|"]
         for i, r in enumerate(top, start=1):
             earn = r.get("days_until_earnings")
             earn_str = f"{earn}d" if earn is not None else "—"
             lines.append(f"| {i} | {r['ticker']} | {r.get('sector') or '—'} | "
-                         f"{r.get('score_20d')} | {r.get('label') or '—'} | {earn_str} |")
+                         f"{r.get('score', r.get('score_20d'))} | "
+                         f"{r.get('label') or '—'} | {earn_str} |")
     else:
         lines.append("_No ranked names for this run._")
 
@@ -603,14 +671,28 @@ def _render_cohort_lines(cohorts):
         weak = _fmt_hit(c.get("weak_hit_pct"), c.get("weak_n", 0))
         ver = c.get("model_version")
         ver_str = f" \u00b7 {ver}" if ver else ""
-        spread = (f" **Spread: {c['spread_pts']:+.1f} pts.**"
+        spread = (f" Spread: **{c['spread_pts']:+.1f} pts**."
                   if c.get("spread_pts") is not None else "")
         mid = c.get("middle_n")
         mid_str = f" ({mid} mid-ranked, not graded)" if mid else ""
+        # The money view leads, because "did it make money" and "was it better than the index
+        # fund I would otherwise have bought" are the questions a person actually has. The
+        # sector-relative number follows, labelled as the skill measure it is.
+        money = ""
+        tp = c.get("top_picks")
+        if tp:
+            bits = [f"averaged **{tp['avg_return_pct']:+.1f}%**",
+                    f"made money {tp['made_money_pct']:.0f}% of the time"]
+            if tp.get("avg_vs_index_pct") is not None:
+                bits.append(f"**{tp['avg_vs_index_pct']:+.1f}% vs SPY** "
+                            f"(beat it {tp['beat_index_pct']:.0f}% of the time)")
+            money = (f"\n  - If you had bought the top {tp['top_n']}: "
+                     + ", ".join(bits) + ".")
         out.append(
             f"- Scored **{c['snapshot_date']}**{ver_str}, graded **{c['horizon']}** later"
-            f" — {c['n']} stocks{mid_str}. "
-            f"Top-rated: {strong}. Bottom-rated: {weak}.{spread}{flag}")
+            f" — {c['n']} stocks{mid_str}."
+            f"{money}\n"
+            f"  - Beat their sector: top-rated {strong}, bottom-rated {weak}.{spread}{flag}")
     return out
 
 
@@ -757,10 +839,11 @@ def _render_entry_v1(entry, brief=None):
     lines.append("")
 
     mv_sec = entry.get("rankings_movement", {})
-    top = mv_sec.get("top_10_by_score_20d", [])
+    top = mv_sec.get("top_10_by_score") or mv_sec.get("top_10_by_score_20d", [])
     if top:
-        lines.append("**Top 10 (score_20d):** "
-                     + ", ".join(f"{r['ticker']} {r['score_20d']}" for r in top))
+        lines.append(f"**Top 10 ({mv_sec.get('score_column', 'score')}):** "
+                     + ", ".join(f"{r['ticker']} {r.get('score', r.get('score_20d'))}"
+                                 for r in top))
     entered, exited = mv_sec.get("entered_top_10", []), mv_sec.get("exited_top_10", [])
     if mv_sec.get("compared_to_prev_live_run"):
         lines.append(f"**vs prev live run ({mv_sec['compared_to_prev_live_run']}):** "
@@ -905,7 +988,10 @@ def run_journal(run_context, db_path=storage.DEFAULT_DB_PATH, output_dir=None, e
         earlier = [d for d in live_dates if d < run_date]
         if earlier:
             prev_live = earlier[-1]
-            prev_scores = storage.get_score_map(model_version, prev_live, db_path=db_path)
+            # Must read the SAME column today's top-10 is ranked on, or entered/exited compares
+            # two different rankings and silently reports churn that never happened.
+            prev_scores = storage.get_score_map(model_version, prev_live,
+                                                column=display_score_column(), db_path=db_path)
 
     # Sections 2 & 3 span ALL model versions: a cohort's grade (Section 2) and the backfill
     # baseline (Section 3) must not reset when the model version bumps. Every evaluated row carries

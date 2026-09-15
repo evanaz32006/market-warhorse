@@ -150,6 +150,32 @@ def evaluate_all_snapshots(db_path=storage.DEFAULT_DB_PATH, model_version=None, 
             history_cache[ticker] = _date_index(hist) if hist else None
         return history_cache[ticker]
 
+    # THE THIRD MEASURE. Excess-vs-sector-benchmark answers "does the ranking have skill" — the right
+    # question for BUILDING the model, because subtracting the sector strips out beta and leaves only
+    # the ordering. It is the wrong question for DECIDING, and it flatters: a stock that falls 15%
+    # while its sector falls 20% is a "hit", and you are still down 15%.
+    #
+    # The decision a person actually faces is "this stock, or the index fund I would otherwise buy".
+    # So the index's own forward return is computed once per run_date and carried alongside, giving
+    # three readings that are cheap to produce and disagree informatively:
+    #   future_return_Nd            -> did it make money at all
+    #   future_excess_vs_index_Nd   -> was it worth doing instead of just buying SPY
+    #   future_excess_return_Nd     -> does the ranking have skill (sector-neutral)
+    index_ticker = PARAMS["calendar_ticker"]
+    index_idx = _get_index(index_ticker)
+    index_forward_cache = {}
+
+    def _index_forward(run_date):
+        if run_date not in index_forward_cache:
+            out = {}
+            if index_idx is not None:
+                _dates, closes, dmap = index_idx
+                i = dmap.get(run_date)
+                for n in HORIZONS:
+                    out[n] = _forward_return(closes, i, n)
+            index_forward_cache[run_date] = out
+        return index_forward_cache[run_date]
+
     evaluated = []
     for row in snapshots:
         ticker, benchmark, run_date = row["ticker"], row["benchmark"], row["run_date"]
@@ -174,6 +200,14 @@ def evaluate_all_snapshots(db_path=storage.DEFAULT_DB_PATH, model_version=None, 
 
         merged = dict(row)
         merged.update(forward)
+
+        index_fwd = _index_forward(run_date)
+        for n in HORIZONS:
+            ir = index_fwd.get(n)
+            tr = forward.get(f"future_return_{n}d")
+            merged[f"future_index_return_{n}d"] = ir
+            merged[f"future_excess_vs_index_{n}d"] = (
+                tr - ir if (tr is not None and ir is not None) else None)
         evaluated.append(merged)
 
     return evaluated
