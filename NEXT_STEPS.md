@@ -98,8 +98,25 @@ Tier 1, GDELT is the defensible entry point.
 3. ~~**Form 4 ingest**~~ — **DONE 2026-09-10**, `src/insider.py`, `--ingest-insider`,
    `--research insider`. 480,796 rows, 1,483 of 1,509 names, filed 2024-01-02 .. 2026-03-31.
 4. **8-K event flags** — same EDGAR pipeline, next up.
-5. **Breadth/regime features.**
+5. ~~**Breadth/regime features.**~~ — **DONE 2026-09-16** as sector breadth inside the
+   sector-timing study: null on 2.2y, null on 27y of ETF history. Sector momentum matches the
+   literature in DIRECTION (long lookbacks +, 20d reversal) and is negligible in SIZE — best
+   tradeable cell +1.95% per 6-month window, t=1.75. No overlay justified.
 6. Re-evaluate. Tier 2 only if time remains.
+
+### Verdict on the whole bulk-work phase (2026-09-16)
+
+Seven data classes measured with pre-registered readings: seasonality, insider transactions, 8-K
+item codes, earnings surprise, short-term reversal, sector momentum, sector breadth. **None
+produced a tradeable signal.** Two of the nulls (insider, 2.2y sector) were underpowered; the rest
+had the power to see an effect and did not. The one thing that changed the picture was not new
+data — it was **repairing 2,069 missing price bars** that had silently dropped half the universe
+from every long-horizon statistic, and **leading the log on the 120d horizon** where the existing
+model actually works.
+
+What is left that is genuinely untested: the FILING TEXT pilot (`src/filing_text.py`, built,
+needs an API key), and predictor classes outside price/filings entirely — macro, flows,
+sector-level estimate revisions.
 
 ### Carried forward from the Form 4 work
 

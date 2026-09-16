@@ -4,6 +4,36 @@ Last updated: 2026-09-16
 
 ---
 
+## Sector timing on 27 YEARS — the null is now informative (2026-09-16)
+
+`research.run_sector_timing_long`, `--research sectorlong`, 5 tests. Separate cache
+`data/sector_etf_long.csv` (gitignored, ~90k rows), never touching `price_history` or the
+SPY-derived master calendar. 8,465 sessions, 1993-01-29 .. 2026-09-16, chronological split at
+2013-04-02 so an effect must hold in BOTH halves.
+
+**Result: 16 cells, 1 nominally significant against 0.8 expected, 0 survive BH-FDR.** With
+1,300+ effective independent observations at 5d the minimum detectable IC drops to 0.03 — the
+sample can now SEE a small effect, and finds almost none.
+
+| lookback | best horizon | IC | both halves? | non-overlap top3−bot3 | windows | t |
+|---|---|---|---|---|---|---|
+| 252d | 5d | +0.026 | yes (+0.021 / +0.031) | +0.03% per 5d | 1,344 | 0.40 |
+| 120d | 120d | +0.055 | yes (+0.015 / +0.098) | +1.95% per 120d | 57 | 1.75 |
+| 20d | 5–60d | −0.015 to −0.020 | yes | −0.11% per 5d | 1,390 | −1.63 |
+
+The ORDERING matches the pre-registered reading exactly: long lookbacks positive, 20d lookback
+negative (reversal), 60d indeterminate. That is a correctness signal for the harness. But the
+magnitudes are tiny — the 252d→5d cell that reaches nominal significance is worth 3 basis points
+per week before costs, and the only cell above 1% per window (120d→120d, +1.95%) sits at t = 1.75
+on 57 windows with its first-half IC near zero.
+
+**Verdict: sector momentum from ETF prices alone is real in direction and negligible in size at
+this granularity.** No sector-timing overlay is justified. The "which sector" question is closed
+on price-only inputs; reopening it needs a different predictor class (macro, flows, earnings
+revisions by sector), not more of the same.
+
+---
+
 ## Sector timing — MEASURED, null, and underpowered by construction (2026-09-16)
 
 `research.run_sector_timing_research`, `--research sectortiming`, 6 tests. **Report only.**

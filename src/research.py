@@ -1726,3 +1726,165 @@ def run_sector_timing_research(db_path=storage.DEFAULT_DB_PATH, model_version=No
           % (len(df), n_tested, n_nom, n_tested * PARAMS["pattern_alpha"],
              int(df["survives_bh_fdr"].sum())))
     return df
+
+
+# ---------------------------------------------------------------------------
+# (h2) Sector timing on the FULL ETF history — the one place calendar time is free
+# ---------------------------------------------------------------------------
+
+# The 2.2-year study could not see sector momentum where it lives: twelve points per day gives a
+# minimum detectable IC of 0.3-0.6 at 60-120d against a published effect of ~0.05-0.10. Unlike the
+# Form 4 null, the fix here is not "wait years": the sector SPDRs have ~27 years of daily history
+# on Yahoo, a sector study needs no stock panel, and 13 series x 27 years is ~90k rows.
+#
+# Kept OUT of `price_history` deliberately. The master calendar is SPY-derived and every panel
+# loader, the recovery logic and the gap detector read it; extending it to 1993 would ripple into
+# all of them for the sake of one study. A separate cache under data/ (gitignored) is the honest
+# boundary: this history exists for this question and nothing downstream can accidentally consume it.
+#
+# PRE-REGISTERED, unchanged from the short study: 120-252d lookback positive at 20-120d forward;
+# 20d lookback weak or reversing. The new discipline the longer sample makes possible is a
+# chronological SPLIT: the effect must hold in BOTH halves, or it is a regime artefact.
+
+SECTOR_LONG_CACHE = "sector_etf_long.csv"
+
+
+def sector_long_history_cache(cache_path=None, refresh=False, tickers=None):
+    """{ticker: pd.Series(close, index=ISO date)} for the sector ETFs plus SPY, full history.
+
+    Cached to a CSV so a re-run never re-downloads and a past result stays reproducible. The
+    first fetch is 13 requests with period='max'."""
+    cache_path = cache_path or os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "data", SECTOR_LONG_CACHE)
+    tickers = list(tickers or (sector_etfs() + ["SPY"]))
+    if os.path.exists(cache_path) and not refresh:
+        df = pd.read_csv(cache_path, dtype={"ticker": str, "date": str})
+    else:
+        import yfinance as yf
+        frames = []
+        for t in tickers:
+            raw = yf.download(t, period="max", auto_adjust=True, progress=False, interval="1d")
+            if raw is None or raw.empty:
+                print("[research] long history: nothing returned for %s" % t)
+                continue
+            if isinstance(raw.columns, pd.MultiIndex):
+                raw.columns = raw.columns.get_level_values(0)
+            frames.append(pd.DataFrame({
+                "ticker": t, "date": [d.strftime("%Y-%m-%d") for d in raw.index],
+                "close": raw["Close"].astype(float).values}))
+        df = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(
+            columns=["ticker", "date", "close"])
+        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+        df.to_csv(cache_path, index=False)
+        print("[research] long history: cached %d rows -> %s" % (len(df), cache_path))
+    out = {}
+    for t, sub in df.groupby("ticker"):
+        sub = sub.sort_values("date")
+        out[t] = pd.Series(sub["close"].values, index=sub["date"].values)
+    return out
+
+
+def build_long_panel(series, calendar_ticker="SPY"):
+    """Align every series onto the calendar ticker's dates. NaN before a series begins (XLRE
+    starts 2015, XLC 2018) and on any session it lacks — never forward-filled, since a fabricated
+    bar would read as a 0% day. Returns a patterns.PatternPanel so forward_returns is reused."""
+    from datetime import date as _date
+    from src.patterns import PatternPanel
+    dates = list(series[calendar_ticker].index)
+    pos = {d: i for i, d in enumerate(dates)}
+    closes = {}
+    for t, s in series.items():
+        arr = np.full(len(dates), np.nan)
+        for d, v in s.items():
+            i = pos.get(d)
+            if i is not None:
+                arr[i] = v
+        closes[t] = arr
+    dow = np.asarray([_date.fromisoformat(d).weekday() for d in dates], dtype=np.int8)
+    return PatternPanel(dates=dates, closes=closes, opens={t: a.copy() for t, a in closes.items()},
+                        dow=dow)
+
+
+def chronological_halves(n_dates, split=None):
+    """(slice_first, slice_second) at the configured fraction. An effect that shows in one half and
+    vanishes in the other is a regime artefact, not a signal."""
+    split = split if split is not None else PARAMS["pattern_oos_split"]
+    cut = int(n_dates * split)
+    return slice(0, cut), slice(cut, n_dates)
+
+
+def run_sector_timing_long(output_dir=None, cache_path=None, refresh=False):
+    """Sector momentum on the full ETF history. Momentum family only — breadth needs the stock
+    panel, which begins in 2024. REPORT ONLY."""
+    from src.patterns import benjamini_hochberg, forward_returns
+
+    series = sector_long_history_cache(cache_path=cache_path, refresh=refresh)
+    if "SPY" not in series:
+        print("[research] long history: no SPY — cannot build a calendar")
+        return pd.DataFrame()
+    panel = build_long_panel(series)
+    etfs = [e for e in sector_etfs() if e in panel.closes]
+    dates, spy = panel.dates, panel.closes["SPY"]
+    n_d, n_s = len(dates), len(etfs)
+    first, second = chronological_halves(n_d)
+    print("[research] long history: %d sessions %s .. %s, %d sectors; split at %s"
+          % (n_d, dates[0], dates[-1], n_s, dates[first.stop]))
+
+    fwd = {}
+    for h in SECTOR_TIMING_HORIZONS:
+        mat = np.full((n_d, n_s), np.nan)
+        for j, e in enumerate(etfs):
+            mat[:, j] = forward_returns(panel, e, h, benchmark="SPY")
+        fwd[h] = mat
+
+    rows, holds = [], []
+    for lb in SECTOR_TIMING_LOOKBACKS:
+        pmat = np.full((n_d, n_s), np.nan)
+        for j, e in enumerate(etfs):
+            pmat[:, j] = trailing_excess(panel.closes[e], spy, lb)
+        pname = "momentum_%dd" % lb
+        for h in SECTOR_TIMING_HORIZONS:
+            daily = [daily_cross_sectional_ic(pmat[i], fwd[h][i]) for i in range(n_d)]
+            agg = _aggregate_ic_series(daily, h)
+            a1 = _aggregate_ic_series(daily[first], h)
+            a2 = _aggregate_ic_series(daily[second], h)
+            rows.append({
+                "predictor": pname, "horizon": h, "n_sectors": n_s, **agg,
+                "first_half_ic": a1["ic_mean"], "first_half_t": a1["overlap_adjusted_t"],
+                "second_half_ic": a2["ic_mean"], "second_half_t": a2["overlap_adjusted_t"],
+                "sign_held_both_halves": (
+                    None if a1["ic_mean"] is None or a2["ic_mean"] is None
+                    else bool(np.sign(a1["ic_mean"]) == np.sign(a2["ic_mean"]) != 0)),
+                "start_date": dates[0], "end_date": dates[-1], "generated_at": _now_iso(),
+            })
+            for w in non_overlapping_top_k(dates, pmat, fwd[h], h, SECTOR_TIMING_TOP_K):
+                holds.append({"predictor": pname, "horizon": h, "start_date": w["date"],
+                              "top_minus_bottom_pct": 100 * (w["top"] - w["bottom"]),
+                              "top_k_excess_vs_spy_pct": 100 * w["top"]})
+
+    p_values = [_two_sided_p(r["overlap_adjusted_t"], r["effective_independent_n"]) for r in rows]
+    survivors = set(benjamini_hochberg(p_values, PARAMS["pattern_fdr_q"]))
+    n_tested = sum(1 for p in p_values if p is not None)
+    n_nom = sum(1 for p in p_values if p is not None and p <= PARAMS["pattern_alpha"])
+    for i, r in enumerate(rows):
+        r.update({"p_value": p_values[i], "family_size": n_tested,
+                  "survives_bh_fdr": bool(i in survivors), "n_nominally_significant": n_nom,
+                  "expected_false_positives_at_alpha": round(n_tested * PARAMS["pattern_alpha"], 2)})
+
+    out_dir = _output_dir(output_dir)
+    df, hd = pd.DataFrame(rows), pd.DataFrame(holds)
+    df.to_csv(os.path.join(out_dir, "sector_timing_long.csv"), index=False)
+    hd.to_csv(os.path.join(out_dir, "sector_timing_long_holds.csv"), index=False)
+    if not hd.empty:
+        summ = (hd.groupby(["predictor", "horizon"])["top_minus_bottom_pct"]
+                  .agg(n_windows="count", mean_pct="mean", median_pct="median",
+                       pct_positive=lambda s: 100.0 * (s > 0).mean(),
+                       t_stat=lambda s: (s.mean() / (s.std(ddof=1) / np.sqrt(len(s)))
+                                         if len(s) > 2 and s.std(ddof=1) > 0 else np.nan))
+                  .reset_index())
+        summ.to_csv(os.path.join(out_dir, "sector_timing_long_holds_summary.csv"), index=False)
+    print("[research] sector timing (long): %d cells (%d tested), %d nominally significant, "
+          "%.1f expected by chance, %d surviving BH-FDR"
+          % (len(df), n_tested, n_nom, n_tested * PARAMS["pattern_alpha"],
+             int(df["survives_bh_fdr"].sum())))
+    return df

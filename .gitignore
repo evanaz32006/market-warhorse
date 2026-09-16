@@ -31,3 +31,6 @@ output/operating_margin_audit.csv
 .env
 .env.*
 !.env.example
+
+# Separate 27-year sector ETF cache for the long-history study (regenerable, ~90k rows)
+data/sector_etf_long.csv

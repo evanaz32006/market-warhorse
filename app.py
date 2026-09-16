@@ -555,7 +555,7 @@ def main():
                          help="v0.4 Phase 4: reconstruct point-in-time scores WITH EDGAR-derived "
                               "fundamentals under model_version=" + EDGAR_MODEL_VERSION)
     parser.add_argument("--research", choices=["decay", "walkforward", "quality", "shorthorizon", "backtest",
-                                  "sizedecay", "patterns", "insider", "events", "sectortiming", "all"],
+                                  "sizedecay", "patterns", "insider", "events", "sectortiming", "sectorlong", "all"],
                          help="run an opt-in RESEARCH analysis (report only — changes no score, "
                               "weight or model_version) and exit, never on the nightly path")
     parser.add_argument("--backup", nargs="?", const="", metavar="DEST_DIR",
@@ -619,6 +619,9 @@ def main():
         if args.research in ("backtest", "all"):
             from src import backtest
             backtest.run_portfolio_backtest(db_path=db_path, model_version=version)
+        if args.research in ("sectorlong", "all"):
+            # Reads its own 27-year ETF cache under data/, never price_history.
+            research.run_sector_timing_long()
         if args.research in ("sectortiming", "all"):
             research.run_sector_timing_research(db_path=db_path, model_version=version)
         if args.research in ("events", "all"):
