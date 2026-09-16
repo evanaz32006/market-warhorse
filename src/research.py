@@ -1934,6 +1934,39 @@ def run_sector_timing_long(output_dir=None, cache_path=None, refresh=False):
 # And the measured gap is itself a LOWER BOUND on the true effect: a name that was relegated and
 # then went to zero has no price history either, so the very worst outcomes are missing from the
 # missing-name sample too.
+#
+# THE GAP, measured on the 100 recoverable names, forward 120 sessions from each month they were
+# still index members (both sides from the SAME dates, so it is not a calendar artefact):
+#
+#     tracked, visible to the model    +7.18%
+#     missing, invisible               -14.46%
+#     gap                             -21.64%, negative in 22 of 22 months
+#
+# THE DIRECTION IS OPPOSITE TO WHAT WAS ASSUMED. The worry was that survivorship might BE the edge.
+# But the headline claim is "the top 10 beat the AVERAGE STOCK by +10.4%", and these names would
+# have dragged that average down — restoring them makes the reported edge larger, not smaller. The
+# bias inflates the BASELINE, and the baseline is the thing being beaten.
+#
+# Significance, reported the way every other null here is: 22 monthly starts of a 120-session window
+# overlap about fourfold, so the naive t of -19.7 is meaningless. Effective independent windows ~4,
+# overlap-adjusted t -8.4, and the 22-of-22 sign test is p = 0.0625 on 4 independent windows. The
+# effect is very large and perfectly consistent in direction, but the sample holds only ~4 genuinely
+# independent windows, so this is strong evidence rather than a settled number.
+#
+# DOES IT REACH THE PICKS? That is the question the baseline gap does not answer, and it is the one
+# that matters. Re-scoring properly needs the widened-universe backfill (a percentile is a rank
+# against peers). Short of that, the missing names were ranked on trailing 120-day relative strength,
+# the single input carrying the most weight in score_120d, across 573 name-months:
+#
+#     mean percentile 30.0 (50 would be indistinguishable from the tracked universe)
+#     5.8% of name-months reached the top decile
+#     0.87% (5 of 573) reached the top-10 region: HTZ in May/Jun/Jul 2025, GOGO in Jul/Aug 2025
+#
+# So the picks ARE exposed, but thinly: roughly 2% of pick-slots over the window should have gone to
+# a name the model could not see. Both offenders are the same failure mode — a violent momentum
+# spike that reverses and ends in relegation — which is the known way a trend model gets hurt, not
+# a survivorship artefact per se. Net reading: the +10.4% is not an artefact of survivorship, and
+# is more likely understated than overstated. The widened backfill would settle the pick side.
 
 SURVIVORSHIP_INDICES = ("sp500", "sp400", "sp600")
 

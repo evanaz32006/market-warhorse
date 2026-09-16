@@ -1,4 +1,60 @@
-# HANDOFF — market-warhorse, written 2026-09-16
+# HANDOFF — market-warhorse
+**Written 2026-09-16. Updated 2026-09-16 (later the same day) with the results of items 1-3.**
+
+> ## STATUS UPDATE — items 1, 2 and 3 are done or in flight. Read this box before the plan below.
+>
+> **Item 1 (live model != backtested model): FIXED and PROVEN.** There were THREE divergences, not
+> one — the third was a near-earnings penalty applied to 289 live rows that no backfilled row could
+> match. All three had a single cause and are fixed as v0.6 via one shared
+> `app.edgar_fundamentals_resolver`. Proof, not assertion: both code paths run over 1,526 tickers on
+> 2026-08-19, 33 fields each, **zero differences**. Guarded by `tests/test_live_backfill_parity.py`,
+> and both load-bearing assertions were confirmed by mutation (one of them initially could not fail).
+>
+> **The v0.6 backfill CANNOT be shortcut by copying v0.5's rows.** Tried it; 1,519 of 1,525 names
+> differ while `latest_close` matches exactly. The closes did not move, the history behind them did —
+> the gap repair refilled 2,069 interior bars and every trailing-window feature spanning a hole
+> changed. `--backfill-v06` is the way, ~6 hours, resumable. It covers through 2026-09-15, so v0.6's
+> true out-of-sample starts the day after it lands — a clean holdout, which is part of problem #3.
+>
+> **Item 2 (survivorship): MEASURED, and it cuts the OPPOSITE way to what this document assumed.**
+> Point-in-time membership is reconstructed from Wikipedia *revisions* (the "Selected changes" table
+> is gone from the page entirely — do not go looking for it). 231 names were in the S&P 1500 during
+> the window and never scored: 3.4% of the S&P 500, 8.9% of the 400, **21.7% of the 600**. Of those,
+> 131 are unrecoverable — but they exited by ACQUISITION, at a premium, so losing them biases a
+> measured edge *downward*. The 100 recoverable ones were RELEGATED, and they returned **-14.46%**
+> forward-120d against **+7.18%** for the names the model could see, negative in 22 of 22 months.
+> Since the headline claim is "top 10 beat the AVERAGE STOCK by +10.4%", restoring these names LOWERS
+> that baseline and makes the reported edge *larger*. Survivorship inflates the thing being beaten.
+> Caveats kept honest: only ~4 independent 120-day windows (sign test p=0.0625), and the gap is a
+> lower bound since relegated-then-bankrupt names have no price history either.
+>
+> **Does it reach the picks?** Thinly. Ranked on trailing 120d relative strength across 573
+> name-months, the missing names average the 30th percentile, but 0.87% (5) reach the top-10 region —
+> HTZ in May-Jul 2025, GOGO in Jul-Aug 2025. Roughly 2% of pick-slots should have gone to a name the
+> model could not see, and both offenders are the same failure mode: a violent momentum spike that
+> reverses into relegation. Settling the pick side needs the widened-universe backfill.
+>
+> **Item 3 (estimate revisions): COLLECTOR IS LIVE.** `estimate_history`, append-only, point-in-time
+> gated in SQL, rolling ~1/5 of the universe nightly. DELIBERATELY NOT SCORED — a test fails the
+> build if an estimate field reaches a weight map, because scoring a live-only input is exactly the
+> mistake v0.6 undid. Useful discovery: `eps_trend` carries its own 7/30/60/90-day trail, so each
+> fetch yields five points, not one.
+>
+> **Other things found while verifying, all committed:**
+> - Recovered days were stamping TODAY's fundamentals onto a past date. Now resolved as-of themselves.
+> - "Frozen" versions silently stopped maturing. A forward return is not known until D+120 has
+>   ELAPSED, so a version with no new snapshots still gains evaluable rows nightly; v0.4's metrics
+>   had been pinned to 2026-08-21 and carried forward unlabelled. Now skipped only when genuinely
+>   exhausted, otherwise refreshed one per night, with `recomputed_on` on every report row.
+> - `edgar._facts_as_of` read 20,935 facts/ticker on its SQL route vs 1,894 on its index route for
+>   the identical answer. Tag-filtered: 7.7x faster, 0 field differences.
+> - **`ev_to_ebitda` and `operating_margin` are NULL on 100% of all 1,055,667 EDGAR rows and always
+>   have been.** Both deliberate and documented, but it means `value_percentile` is the mean of
+>   THREE ratios, not the four config advertises, and quality has never included operating margin.
+>
+> **Still true and still unaddressed:** the 14.1 GB DB has never been backed up, and with 25 GB free
+> on C: a local copy will not fit. Task Scheduler still kills the run on battery.
+
 
 **Read this first, then CLAUDE.md, then SESSION_STATE.md. This file is the mission brief; the
 others are the rules and the log.**
