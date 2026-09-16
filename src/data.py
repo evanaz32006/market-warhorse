@@ -487,3 +487,148 @@ def _download_batch(tickers, start, end):
         if not sub.empty:
             out[tickers[0]] = sub
     return out
+
+
+# ---------------------------------------------------------------------------
+# Analyst estimate revisions — ACCUMULATE-FORWARD
+# ---------------------------------------------------------------------------
+
+# Upward revisions to consensus EPS estimates are the strongest documented anomaly this project has
+# never tested, and the one input here that CANNOT BE BOUGHT BACK. Price history and SEC filings can
+# be fetched for any past date whenever we get round to them; Yahoo publishes only where estimates
+# stand TODAY. So the sample for this factor begins on the first night this function runs, and every
+# night it does not run is a night permanently absent from that sample.
+#
+# NOT SCORED. Collected only. Feeding a live-only input into the score is exactly the mistake v0.6
+# was written to undo (see LIVE_PIT_MODEL_VERSION): it would put a factor in the model that no
+# backfilled row could ever carry, and re-split one model_version into two different models. It earns
+# a place in the score by being MEASURED first — which needs history this table does not have yet.
+
+def _estimate_rows_for_ticker(ticker, trend, revisions, fetched_date, now_iso):
+    """Flatten yfinance's two estimate frames into one row per period.
+
+    They are separate frames indexed by the same period labels ('0q', '+1q', '0y', '+1y'), and either
+    can be absent or short. Periods are UNIONED rather than intersected so a ticker with a trend but
+    no revision counts still records its trend — a partial observation is real data, and dropping it
+    would silently shrink the sample."""
+    def _cell(frame, period, col):
+        try:
+            if frame is None or getattr(frame, "empty", True) or period not in frame.index:
+                return None
+            if col not in frame.columns:
+                return None
+            v = frame.loc[period, col]
+        except Exception:
+            return None
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            return None
+        return None if pd.isna(f) else f
+
+    def _periods(frame):
+        if frame is None or getattr(frame, "empty", True):
+            return []
+        return [str(p) for p in frame.index]
+
+    def _currency(period):
+        for frame in (trend, revisions):
+            try:
+                if (frame is not None and not getattr(frame, "empty", True)
+                        and period in frame.index and "currency" in frame.columns):
+                    c = frame.loc[period, "currency"]
+                    if isinstance(c, str) and c:
+                        return c
+            except Exception:
+                pass
+        return None
+
+    rows = []
+    for period in sorted(set(_periods(trend)) | set(_periods(revisions))):
+        # Yahoo spells one of these with a capital D ('downLast7Days') and the rest lowercase.
+        # Both spellings are tried rather than assumed: a silent None here would read as "no analyst
+        # revised down", which is a fabricated signal, not a missing one.
+        down7 = _cell(revisions, period, "downLast7Days")
+        if down7 is None:
+            down7 = _cell(revisions, period, "downLast7days")
+        rows.append({
+            "ticker": ticker, "fetched_date": fetched_date, "period": period,
+            "eps_current": _cell(trend, period, "current"),
+            "eps_7d_ago": _cell(trend, period, "7daysAgo"),
+            "eps_30d_ago": _cell(trend, period, "30daysAgo"),
+            "eps_60d_ago": _cell(trend, period, "60daysAgo"),
+            "eps_90d_ago": _cell(trend, period, "90daysAgo"),
+            "up_last_7d": _cell(revisions, period, "upLast7days"),
+            "up_last_30d": _cell(revisions, period, "upLast30days"),
+            "down_last_7d": down7,
+            "down_last_30d": _cell(revisions, period, "downLast30days"),
+            "currency": _currency(period),
+            "fetch_failed": 0, "timestamp_fetched": now_iso,
+        })
+    return rows
+
+
+def fetch_estimate_revisions(tickers, db_path=storage.DEFAULT_DB_PATH, refresh_days=None,
+                             as_of_date=None):
+    """Record today's analyst EPS estimates + revision counts for a rolling slice of the universe.
+
+    Rolling, not exhaustive, for the same reason `fetch_fundamentals` is: ~1,500 requests a night
+    against Yahoo's ~360/hour soft limit is the surest way to get the IP blocked, and a block stops
+    ALL data collection, including the irreplaceable kind. The slice costs ~1/refresh_days of the
+    universe per night and staggers naturally.
+
+    The thinner sampling matters less here than it would elsewhere, because one observation carries
+    its own 90-day trail (eps_7d_ago .. eps_90d_ago), so a ticker seen every few days still yields a
+    dense revision series.
+
+    Append-only and fail-soft: a ticker that errors is logged and skipped, never retried in a loop and
+    never written as zeros. Returns the number of rows written."""
+    if isinstance(tickers, str):
+        tickers = [tickers]
+    refresh_days = refresh_days if refresh_days is not None else PARAMS["estimates_refresh_days"]
+    delay = PARAMS["fundamentals_fetch_delay_sec"]
+    fetched_date = as_of_date or date.today().isoformat()
+    storage.init_db(db_path)
+
+    # Oldest-first by last observation, so every name is reached in turn and a never-seen ticker
+    # (no rows at all) sorts ahead of every ticker that has been seen even once.
+    conn = storage._connect(db_path)
+    try:
+        last_seen = dict(conn.execute(
+            "SELECT ticker, MAX(fetched_date) FROM estimate_history GROUP BY ticker").fetchall())
+    finally:
+        conn.close()
+    n = max(1, math.ceil(len(tickers) / refresh_days)) if tickers else 0
+    ranked = sorted(tickers, key=lambda t: (last_seen.get(t) or "", t))
+    to_fetch = ranked[:n]
+
+    written, failed, skipped_empty = 0, [], 0
+    for t in to_fetch:
+        try:
+            tk = yf.Ticker(t)
+            rows = _estimate_rows_for_ticker(t, tk.eps_trend, tk.eps_revisions,
+                                             fetched_date, _now_iso())
+        except Exception as e:
+            print(f"[data] estimates fetch failed for {t} ({e}) — skipped, no data invented")
+            failed.append(t)
+            time.sleep(delay)
+            continue
+        if rows:
+            written += storage.upsert_estimate_rows(rows, db_path=db_path)
+        else:
+            # An ETF, or a name no analyst covers. Recorded as an explicit failed observation so it
+            # sorts to the back of the queue instead of being retried first every single night.
+            storage.upsert_estimate_rows([{
+                "ticker": t, "fetched_date": fetched_date, "period": "none",
+                "fetch_failed": 1, "timestamp_fetched": _now_iso()}], db_path=db_path)
+            skipped_empty += 1
+        time.sleep(delay)
+
+    n_rows, n_tickers, first_seen, latest = storage.estimate_coverage(db_path=db_path)
+    print(f"[data] estimates rolling — asked {len(to_fetch)} of {len(tickers)} names, wrote {written} "
+          f"row(s), {skipped_empty} with no coverage, {len(failed)} failed")
+    print(f"[data] estimate history now: {n_rows:,} rows across {n_tickers} tickers, "
+          f"{first_seen or 'n/a'} .. {latest or 'n/a'} — this history cannot be backfilled later")
+    if failed:
+        print(f"[data] estimates failed tickers (skipped): {failed}")
+    return written

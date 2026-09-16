@@ -128,6 +128,12 @@ PARAMS = {
     # fundamental field on a live run — signals a data-source problem worth knowing about.
     "fundamental_sparse_warn_pct": 0.40,
 
+    # Analyst estimate revisions — how many nights to spread one pass over the universe across.
+    # 5 means ~1/5 of the names are asked each night (~300 requests at current size), which keeps the
+    # run well inside Yahoo's ~360/hr soft limit. Thinner sampling costs less here than it would
+    # elsewhere because one observation carries its own 90-day trail (eps_7d_ago..eps_90d_ago).
+    "estimates_refresh_days": 5,
+
     # How many still-maturing FROZEN versions to recompute per nightly run, oldest-first. A frozen
     # version keeps gaining evaluable rows until its newest snapshot has matured at the longest
     # horizon, so "frozen" cannot mean "never recomputed" without pinning its metrics (see the

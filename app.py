@@ -317,6 +317,18 @@ def _run_live(watchlist, histories, latest_dates, db_path):
     # source swap: a dict lookup instead of a request.
     earnings_map = data.fetch_earnings_dates(scored_tickers, db_path=db_path)
 
+    # ACCUMULATE-FORWARD. Analyst estimate revisions are the strongest documented anomaly this
+    # project has never tested, and the only input here that cannot be bought back later: Yahoo
+    # publishes where estimates stand TODAY and nothing else, so the sample starts the first night
+    # this runs and every skipped night is permanently missing from it. Rolling slice, fail-soft,
+    # NOT scored — it goes into its own table until there is enough history to measure it. Wrapped
+    # because a failure to collect a future factor must never take down tonight's actual run.
+    try:
+        data.fetch_estimate_revisions(scored_tickers, db_path=db_path, as_of_date=run_date)
+    except Exception as e:
+        print(f"[app] estimate collection failed ({e}) — run continues; this costs one night of "
+              f"a history that cannot be backfilled, so investigate before it costs more")
+
     # v0.6: fundamentals come from EDGAR, resolved AS OF run_date — the identical call the backfill
     # makes. fundamentals_pit=1 on every live row from here on, which is what makes a live row and a
     # backfilled row the same kind of object for the first time.
@@ -891,6 +903,23 @@ def _print_status(db_path, today=None):
         print(f"[status] Usually a run that fired before the data vendor published end-of-day bars "
               f"for the whole universe. Re-running on the SAME session date refills it; once the "
               f"market moves on, that day stays partial.")
+
+    # The accumulate-forward sample. Reported here because it is the one number that gets WORSE by
+    # doing nothing: a missed night of prices or filings is recoverable, a missed night of analyst
+    # estimates is gone. Showing it growing is the only feedback that the collector is alive.
+    try:
+        n_rows, n_tickers, first_seen, latest_seen = storage.estimate_coverage(db_path=db_path)
+    except Exception:
+        n_rows = 0
+        n_tickers = first_seen = latest_seen = None
+    if n_rows:
+        span = weekdays_between(first_seen, latest_seen) + 1 if first_seen and latest_seen else 0
+        print(f"[status] estimate history: {n_rows:,} observation(s) across {n_tickers} ticker(s), "
+              f"{first_seen} .. {latest_seen} (~{span} weekday(s) of a history that cannot be "
+              f"backfilled). NOT scored — collecting until there is enough sample to measure it.")
+    else:
+        print(f"[status] estimate history: EMPTY. Every night this stays empty is a night missing "
+              f"from a sample that cannot be bought back — run `python app.py` to start it.")
 
 
 def _n_sessions_back(db_path, n):

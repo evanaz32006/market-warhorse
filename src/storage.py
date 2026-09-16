@@ -164,6 +164,47 @@ def init_db(db_path=DEFAULT_DB_PATH):
             )
         """)
 
+        # ANALYST ESTIMATE HISTORY (accumulate-forward — that is the entire point of this table).
+        #
+        # Upward revisions to EPS estimates are the strongest documented anomaly this project has
+        # never tested, and unlike price or filings THIS ONE CANNOT BE BOUGHT BACK for free. Yahoo
+        # serves only the current snapshot, so the only way to own a history is to start writing one
+        # down. Every night of delay is a night permanently missing from the sample.
+        #
+        # APPEND-ONLY, keyed on (ticker, fetched_date, period): re-running on the same day is
+        # idempotent, but a later day NEVER overwrites an earlier observation. That is what makes the
+        # table usable point-in-time — a feature for date D reads the newest row with
+        # fetched_date <= D, and a row written afterwards cannot reach back into it.
+        #
+        # One fetch yields FIVE points per period, not one: eps_trend reports the estimate as it
+        # stands now and as it stood 7/30/60/90 days ago, so a revision is computable from a single
+        # observation instead of needing two nights of history. Those lagged values are Yahoo's
+        # CURRENT account of the past and may be restated, which is exactly why `eps_current` is
+        # stored alongside them — once this table holds 90 days of its OWN observations the two can
+        # be compared, and the lagged columns checked rather than trusted.
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS estimate_history (
+                ticker TEXT NOT NULL,
+                fetched_date TEXT NOT NULL,
+                period TEXT NOT NULL,
+                eps_current REAL,
+                eps_7d_ago REAL,
+                eps_30d_ago REAL,
+                eps_60d_ago REAL,
+                eps_90d_ago REAL,
+                up_last_7d REAL,
+                up_last_30d REAL,
+                down_last_7d REAL,
+                down_last_30d REAL,
+                currency TEXT,
+                fetch_failed INTEGER NOT NULL DEFAULT 0,
+                timestamp_fetched TEXT NOT NULL,
+                PRIMARY KEY (ticker, fetched_date, period)
+            )
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_estimate_ticker_date "
+                     "ON estimate_history(ticker, fetched_date)")
+
         feature_cols_sql = ",\n                ".join(f"{c} REAL" for c in RAW_FEATURE_COLUMNS)
         percentile_cols_sql = ",\n                ".join(f"{c} REAL" for c in PERCENTILE_COLUMNS)
         score_cols_sql = ",\n                ".join(f"{c} REAL" for c in SCORE_COLUMNS)
@@ -776,6 +817,67 @@ def get_score_map(model_version, run_date, column="score_20d", db_path=DEFAULT_D
             (model_version, run_date),
         ).fetchall()
         return {r[0]: r[1] for r in rows}
+    finally:
+        conn.close()
+
+
+ESTIMATE_COLUMNS = ["eps_current", "eps_7d_ago", "eps_30d_ago", "eps_60d_ago", "eps_90d_ago",
+                    "up_last_7d", "up_last_30d", "down_last_7d", "down_last_30d"]
+
+
+def upsert_estimate_rows(rows, db_path=DEFAULT_DB_PATH):
+    """Append estimate observations. Keyed on (ticker, fetched_date, period), so re-running a day is
+    idempotent while a later day can never overwrite an earlier observation.
+
+    A missing field is written as NULL, never 0 — "no analyst revised" and "we failed to ask" are
+    different facts, and conflating them is how a data gap becomes a signal (invariant #2)."""
+    if not rows:
+        return 0
+    cols = (["ticker", "fetched_date", "period"] + ESTIMATE_COLUMNS
+            + ["currency", "fetch_failed", "timestamp_fetched"])
+    conn = _connect(db_path)
+    try:
+        conn.executemany(
+            f"INSERT OR REPLACE INTO estimate_history ({', '.join(cols)}) "
+            f"VALUES ({', '.join('?' for _ in cols)})",
+            [tuple(r.get(c) for c in cols) for r in rows])
+        conn.commit()
+        return len(rows)
+    finally:
+        conn.close()
+
+
+def get_estimates_as_of(ticker, as_of_date, db_path=DEFAULT_DB_PATH):
+    """The freshest estimate observation per period that EXISTED on as_of_date.
+
+    THE NO-LOOKAHEAD GATE for estimates, enforced in SQL exactly as `load_edgar_facts` does for
+    filings: `fetched_date <= as_of_date`, newest first, one row per period. An observation written
+    tomorrow cannot appear in a feature computed for today, no matter what the caller does.
+
+    Returns {period: row-dict}; empty when nothing had been observed yet for this ticker."""
+    conn = _connect(db_path)
+    try:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            "SELECT * FROM estimate_history WHERE ticker = ? AND fetched_date <= ? "
+            "ORDER BY fetched_date DESC", (ticker, as_of_date)).fetchall()
+        out = {}
+        for r in rows:
+            out.setdefault(r["period"], dict(r))     # first seen == newest, since sorted DESC
+        return out
+    finally:
+        conn.close()
+
+
+def estimate_coverage(db_path=DEFAULT_DB_PATH):
+    """(n_rows, n_tickers, earliest_fetched_date, latest_fetched_date) — how much history the
+    accumulate-forward table has actually managed to collect. Reported by --status so the owner can
+    see the sample growing, since its whole value is that it cannot be recovered later."""
+    conn = _connect(db_path)
+    try:
+        return conn.execute(
+            "SELECT COUNT(*), COUNT(DISTINCT ticker), MIN(fetched_date), MAX(fetched_date) "
+            "FROM estimate_history WHERE fetch_failed = 0").fetchone()
     finally:
         conn.close()
 

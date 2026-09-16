@@ -405,3 +405,74 @@ def compute_features(ticker, benchmark, as_of_date, price_history, benchmark_his
         print(f"[features] {ticker} as of {as_of_date}: null fields (insufficient history, n={n} bars): {insufficient_log}")
 
     return out
+
+
+# ---------------------------------------------------------------------------
+# Analyst estimate revisions — derived features (COLLECTED, NOT SCORED)
+# ---------------------------------------------------------------------------
+
+# These are deliberately NOT wired into compute_features or any component. The table they read from
+# only began accumulating on 2026-09-16, so there is no history to validate them against, and putting
+# an unvalidated live-only input into the score is precisely the failure v0.6 exists to undo: it
+# would create a factor no backfilled row could carry and split one model_version into two models
+# again. They exist now so the collector's output can be inspected and the measurement is ready to
+# run the moment there is enough sample.
+
+ESTIMATE_PRIMARY_PERIOD = "+1y"     # next fiscal year: the horizon revision studies usually use
+
+
+def _pct_change(now, then):
+    """(now - then) / |then|, or None if either side is missing or `then` is zero.
+
+    The absolute value in the denominator is what makes this correct across a sign flip: for a
+    company estimated to lose 0.50 and now expected to lose 0.25, a raw denominator would report
+    -50% for what is unambiguously an UPWARD revision. Division by a zero estimate is undefined, not
+    infinite, so it returns None rather than a sentinel."""
+    if now is None or then is None or then == 0:
+        return None
+    return (now - then) / abs(then)
+
+
+def estimate_features_as_of(ticker, as_of_date, db_path=None, period=ESTIMATE_PRIMARY_PERIOD):
+    """Revision features for `ticker` as they stood on `as_of_date`. Strictly point-in-time: the
+    underlying read gates on `fetched_date <= as_of_date` in SQL, so an observation recorded later
+    cannot reach back into an earlier feature.
+
+    Every field is None when unobserved, with `estimates_missing` saying so explicitly — never 0.
+    A company no analyst has revised and a company we have not yet asked about are different facts,
+    and the zero would be indistinguishable from a real "no revisions" reading.
+
+    Returns a flat dict:
+      eps_revision_1m / _3m   fractional change in the consensus estimate over ~30 / ~90 days
+      eps_revision_breadth_30d (ups - downs) / (ups + downs) over the last 30 days, in [-1, 1]
+      eps_estimate_age_days   how stale the observation is, so a thin rolling sample stays visible
+    """
+    from src import storage
+    from datetime import date as _date
+
+    out = {
+        "eps_revision_1m": None, "eps_revision_3m": None,
+        "eps_revision_breadth_30d": None, "eps_revision_up_30d": None,
+        "eps_revision_down_30d": None, "eps_estimate_age_days": None,
+        "estimates_missing": True,
+    }
+    rows = storage.get_estimates_as_of(
+        ticker, as_of_date, db_path=db_path or storage.DEFAULT_DB_PATH)
+    row = rows.get(period)
+    if not row or int(row.get("fetch_failed") or 0):
+        return out
+
+    out["eps_revision_1m"] = _pct_change(row.get("eps_current"), row.get("eps_30d_ago"))
+    out["eps_revision_3m"] = _pct_change(row.get("eps_current"), row.get("eps_90d_ago"))
+    up, down = row.get("up_last_30d"), row.get("down_last_30d")
+    out["eps_revision_up_30d"], out["eps_revision_down_30d"] = up, down
+    if up is not None and down is not None and (up + down) > 0:
+        out["eps_revision_breadth_30d"] = (up - down) / (up + down)
+    try:
+        out["eps_estimate_age_days"] = (_date.fromisoformat(as_of_date)
+                                        - _date.fromisoformat(row["fetched_date"])).days
+    except (ValueError, TypeError, KeyError):
+        out["eps_estimate_age_days"] = None
+    out["estimates_missing"] = all(
+        out[k] is None for k in ("eps_revision_1m", "eps_revision_3m", "eps_revision_breadth_30d"))
+    return out
