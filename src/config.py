@@ -1,6 +1,52 @@
 # All tunable values live here so every threshold/window is auditable in one place.
 # Nothing in features.py, data.py, storage.py, or scoring.py should hardcode a number
 # that belongs in one of these dicts.
+#
+# SECRETS AND PERSONAL DATA DO NOT LIVE HERE. They come from the environment, optionally via a
+# local `.env` that is gitignored, so this file stays safe to publish. `.env.example` documents
+# what to set. The loader below is ten lines rather than a python-dotenv dependency, and it never
+# overwrites a variable the real environment already defines - an explicitly exported value must
+# always win over a file on disk.
+
+import os
+
+
+def _load_dotenv(path=None):
+    """Read KEY=VALUE lines from `.env` into os.environ, without clobbering the real environment."""
+    path = path or os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+    if not os.path.exists(path):
+        return
+    with open(path, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key, value = key.strip(), value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
+
+_load_dotenv()
+
+# SEC REQUIRES a descriptive User-Agent carrying a real contact address, and will block a generic or
+# absent one. It is therefore genuinely mandatory AND genuinely personal, which is exactly the
+# combination that should not sit in a published file. Set SEC_CONTACT_EMAIL in .env.
+SEC_CONTACT_EMAIL = os.environ.get("SEC_CONTACT_EMAIL", "").strip()
+SEC_USER_AGENT = "market-warhorse research (contact: %s)" % (SEC_CONTACT_EMAIL or "UNSET")
+
+
+def require_sec_contact():
+    """Fail loudly before any SEC request if no contact is configured.
+
+    SEC blocks on a missing contact, and a block is indistinguishable from "this company has no
+    filings" once the fail-soft handlers swallow it - so this is checked up front rather than
+    diagnosed later from an empty ingest."""
+    if not SEC_CONTACT_EMAIL:
+        raise RuntimeError(
+            "SEC_CONTACT_EMAIL is not set. SEC requires a real contact address in the User-Agent "
+            "and blocks requests without one. Copy .env.example to .env and fill it in.")
+
 
 PARAMS = {
     # PROMOTED 2026-08-21 from v0.3_sector_neutral. v0.5 is the same scoring logic as v0.3/v0.4 -
@@ -268,7 +314,7 @@ PARAMS = {
     # Russell 2000: same GICS taxonomy the pipeline already speaks, stable sources, far less index
     # turnover (which is also less survivorship bias).
     "index_fetch_timeout_sec": 25,
-    "index_fetch_user_agent": "market-warhorse research (contact: evanaz32006@gmail.com)",
+    "index_fetch_user_agent": SEC_USER_AGENT,
     # Liquidity. Small caps include names that cannot absorb a real order; a backtest that trades
     # them is fiction. Measured, FLAGGED, and never silently dropped - the row is still scored and
     # stored, only the portfolio simulation excludes it.
@@ -682,7 +728,7 @@ COMPONENT_PARAMS = {
 EDGAR = {
     # SEC REQUIRES a descriptive User-Agent with a real contact on every request (they will block a
     # generic/absent one). This is a config value — change the contact to your own.
-    "user_agent": "market-warhorse research (contact: evanaz32006@gmail.com)",
+    "user_agent": SEC_USER_AGENT,
     "company_tickers_url": "https://www.sec.gov/files/company_tickers.json",
     # {cik10} = 10-digit zero-padded CIK.
     "companyfacts_url": "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik10}.json",

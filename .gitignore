@@ -25,3 +25,9 @@ output/research/walk_forward_weights.csv
 output/research/short_horizon_signals.csv
 output/edgar_validation_report.csv
 output/operating_margin_audit.csv
+
+# --- Secrets: NEVER in git ----------------------------------------------------
+# Real contact address and API keys. `.env.example` is the committed template.
+.env
+.env.*
+!.env.example

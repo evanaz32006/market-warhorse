@@ -6,8 +6,8 @@ _Machine-appended after every run. Regenerated from the `journal` table; do not 
 
 ## 2026-09-15 — v0.5_expanded_universe (live)
 
-_Run: scored 1521 tickers in 0.0s · fetch fresh=0 / cached=0 / failed=0_
-_Warnings: re-rendered after price-gap repair_
+_Run: scored 1521 tickers in 1856.1s · fetch fresh=0 / cached=1527 / failed=1 (CWEN-A)_
+_Warnings: 1 ticker(s) failed price fetch; 7 ticker(s) skipped (stale / no data)_
 
 ### 1. Today's Rankings
 
@@ -15,19 +15,19 @@ _Research ranking, NOT a buy recommendation._
 
 | # | Ticker | Sector | score_120d | Label | Earnings in |
 |---|--------|--------|-----------|-------|-------------|
-| 1 | MATX | Industrials | 82.7 | strong | 50d |
-| 2 | TMP | Financials | 82.2 | strong | 38d |
-| 3 | INSW | Energy | 80.8 | strong | 51d |
-| 4 | LPG | Energy | 80.7 | strong | 51d |
-| 5 | DINO | Energy | 80.0 | strong | 44d |
-| 6 | HRMY | Health Care | 80.0 | decent | 49d |
-| 7 | VLO | Energy | 79.9 | decent | 37d |
-| 8 | SM | Energy | 79.8 | decent | 48d |
-| 9 | MPC | Energy | 79.6 | decent | 49d |
-| 10 | UFCS | Financials | 79.5 | decent | 49d |
+| 1 | MATX | Industrials | 82.3 | strong | 49d |
+| 2 | TMP | Financials | 82.1 | strong | 37d |
+| 3 | HRMY | Health Care | 80.6 | strong | 48d |
+| 4 | LPG | Energy | 80.6 | strong | 50d |
+| 5 | INSW | Energy | 80.2 | strong | 50d |
+| 6 | DINO | Energy | 80.0 | strong | 43d |
+| 7 | VLO | Energy | 79.9 | decent | 36d |
+| 8 | MPC | Energy | 79.6 | decent | 48d |
+| 9 | DBX | Information Technology | 79.6 | decent | 50d |
+| 10 | SM | Energy | 79.3 | decent | 47d |
 
-**vs prev live run (2026-09-14):** entered [SM] · exited [BFH]
-**Movers:** ↑ VAL +14.2, RMD +13.8, CNXC +13.0, FTRE +12.2, CE +10.3  ↓ CMG -17.7, ENVA -16.5, SYY -16.1, WRBY -15.8, CFR -14.7
+**vs prev live run (2026-09-14):** entered [DBX, SM] · exited [BFH, UFCS]
+**Movers:** ↑ VAL +15.5, RMD +13.8, CNXC +13.2, FTRE +12.6, TDC +11.5  ↓ CMG -17.5, SONO -17.2, ENVA -17.0, SYY -16.0, GNW -15.2
 
 ### 2. Predictions that came due today
 
