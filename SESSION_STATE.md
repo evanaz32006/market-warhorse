@@ -1,6 +1,44 @@
 # SESSION_STATE.md
 
-Last updated: 2026-09-11
+Last updated: 2026-09-16
+
+---
+
+## Sector timing — MEASURED, null, and underpowered by construction (2026-09-16)
+
+`research.run_sector_timing_research`, `--research sectortiming`, 6 tests. **Report only.**
+
+**Why:** since v0.3 the ranking is sector-NEUTRAL — it picks stocks within a sector and never
+decides which sector to hold. The money view showed exactly that failure: a basket six-tenths
+Energy, down while SPY rose. This asks the dimension the model deliberately ignores.
+
+**What was tested:** two predictor families across the 12 sector ETFs, per day, as a
+cross-sectional Spearman IC against forward excess vs SPY — trailing sector momentum at 20/60/120/
+252 sessions, and constituent breadth (% above SMA200 / SMA50) from the stock panel. Plus the
+tradeable version: non-overlapping top-3-minus-bottom-3 holds, for an honest independent count.
+
+**Pre-registered:** long lookbacks (120–252d) positive at 20–120d forward; 20d lookback weak or
+reversing; breadth weakly positive. Power stated up front as low — twelve points per day.
+
+**Result: 24 cells, 17 testable, 0 nominally significant against 0.9 expected, 0 survive.** Seven
+cells at 120d fell below the inference floor entirely (effective n 1.6–3.5).
+
+The one direction-consistent cell is the pre-registered one: **252d momentum → 5–20d forward,
+IC +0.062 / +0.063, 58–61% of days positive, non-overlapping top-minus-bottom +0.44% at 5d over 61
+windows.** Right sign, right lookback — and about half the minimum detectable IC (0.146). Not
+evidence; not counter-evidence.
+
+**The MDE column is the finding.** With 12 sectors the minimum detectable IC is 0.10–0.15 at short
+horizons and 0.3–0.6 at 60–120d. The published sector-momentum effect is roughly IC 0.05–0.10 and
+lives at 1–6 months. **This sample cannot see it where it lives**, same shape as the Form 4 result.
+Moskowitz & Grinblatt needed three decades; this is 2.2 years.
+
+**The way out is different here, though.** The sector ETFs are 12 series with ~27 years of free
+daily history on Yahoo (SPDRs launched 1998). `fetch_period = 2y` is a project choice made for a
+1,500-name universe, not a data limit — and a sector-level study needs no stock panel. Extending
+the momentum family to the full ETF history would take effective n at 120d from ~3 to ~50, at the
+cost of ~90k rows. Kept OUT of `price_history` deliberately: the master calendar is SPY-derived and
+extending it to 1993 would ripple into every panel loader. Next step if pursued: a separate cache.
 
 ---
 

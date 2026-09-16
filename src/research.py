@@ -1501,3 +1501,228 @@ def _two_sided_p(t, effective_n):
     if t is None or pd.isna(t) or not effective_n or effective_n < PARAMS["pattern_min_effective_n"]:
         return None
     return _t_sf(t, max(1.0, effective_n - 1))
+
+
+# ---------------------------------------------------------------------------
+# (h) Sector timing — is WHICH sector to hold predictable at all?  REPORT ONLY
+# ---------------------------------------------------------------------------
+
+# PRE-REGISTERED READING, written before any number was seen.
+#
+#   Since v0.3 the ranking is sector-NEUTRAL: it picks stocks within a sector and never decides
+#   which sector to be in. So a perfect stock-picker under this design can still lose money in a
+#   sinking sector — which is exactly what the money view showed (a basket six-tenths Energy, down
+#   while SPY rose). This asks the dimension the model deliberately ignores.
+#
+#   Two predictor families, both cheap and point-in-time by construction:
+#     * SECTOR MOMENTUM — each sector ETF's trailing excess return vs SPY over L sessions. The
+#       published result (Moskowitz & Grinblatt 1999) is that 6-12 month sector momentum predicts
+#       the next 1-6 months POSITIVELY, while a 1-month lookback tends to REVERSE. So: expect
+#       positive IC for L in {120, 252} at H in {20..120}; expect weak-to-negative for L = 20.
+#     * SECTOR BREADTH — the fraction of a sector's constituents trading above their own 200-day
+#       (and 50-day) average, from the stock panel. A level, not a change. Honest expectation:
+#       weakly positive at 20-60d, and this one has less literature behind it.
+#
+#   POWER IS LOW AND THAT IS STATED UP FRONT. There are 12 sectors, so a daily cross-sectional IC
+#   is a rank correlation on twelve points and is individually meaningless — only the average over
+#   hundreds of days carries information, and those days overlap. Effective independent n at 120d
+#   is ~4. The minimum detectable IC is reported on every row so a null reads as "could not see
+#   it" rather than "it is not there".
+#
+#   If the SHORT lookback shows strong POSITIVE IC at short horizons, suspect the date join before
+#   believing it — reversal is the documented direction there.
+SECTOR_TIMING_LOOKBACKS = [20, 60, 120, 252]
+SECTOR_TIMING_HORIZONS = [5, 20, 60, 120]
+SECTOR_TIMING_TOP_K = 3
+
+
+def sector_etfs():
+    """The 11 GICS sector SPDRs plus SMH. Size benchmarks (IJH/IJR) are excluded: they answer a
+    different question. Read from config so a benchmark change flows through."""
+    from src.config import SECTOR_BENCHMARK_MAP
+    return sorted(set(SECTOR_BENCHMARK_MAP.values()) | {"SMH"})
+
+
+def trailing_excess(closes, spy, lookback):
+    """closes[i]/closes[i-L] - spy[i]/spy[i-L]. NaN for i < L. Uses ONLY prices at index <= i."""
+    out = np.full(len(closes), np.nan)
+    if lookback < len(closes):
+        out[lookback:] = (closes[lookback:] / closes[:-lookback]) - (spy[lookback:] / spy[:-lookback])
+    return out
+
+
+def daily_cross_sectional_ic(pred, fwd):
+    """Spearman across sectors on ONE day. pred/fwd are 1-D arrays aligned by sector.
+    None when fewer than 4 sectors are usable or a side is constant — twelve points is already
+    thin, and a correlation on three of them is arithmetic, not evidence."""
+    m = ~(np.isnan(pred) | np.isnan(fwd))
+    if m.sum() < 4:
+        return None
+    a, b = pd.Series(pred[m]).rank(), pd.Series(fwd[m]).rank()
+    if a.std(ddof=0) == 0 or b.std(ddof=0) == 0:
+        return None
+    return float(a.corr(b))
+
+
+def _aggregate_ic_series(vals, horizon):
+    s = pd.Series([v for v in vals if v is not None], dtype=float)
+    stats = evaluation._aggregate_daily(s)
+    return {
+        "ic_mean": stats["mean"], "ic_median": stats["median"], "ic_std": stats["std"],
+        "pct_days_positive": stats["pct_positive"], "n_days": stats["n_days"],
+        "overlap_adjusted_t": evaluation._overlap_adjusted_t(
+            stats["mean"], stats["std"], stats["n_days"], horizon),
+        "effective_independent_n": (round(stats["n_days"] / float(horizon), 1)
+                                    if stats["n_days"] else 0),
+        "min_detectable_ic": _min_detectable(stats["std"], stats["n_days"], horizon),
+    }
+
+
+def sector_breadth_matrix(db_path, model_version, sector_of, dates, etfs, column):
+    """[len(dates) x len(etfs)] fraction of each sector's constituents with `column` > 0 on that
+    date, from the stock panel. NaN where a sector has too few scored names to say.
+
+    Pulled with a three-column SQL query rather than storage.load_all_snapshots: the full row set
+    is 124 columns x 800k rows and takes minutes to materialise as dicts for three fields."""
+    conn = storage._connect(db_path)
+    try:
+        rows = conn.execute(
+            "SELECT run_date, ticker, %s FROM feature_snapshots WHERE model_version = ? "
+            "AND %s IS NOT NULL" % (column, column), (model_version,)).fetchall()
+    finally:
+        conn.close()
+    etf_idx = {e: j for j, e in enumerate(etfs)}
+    date_idx = {d: i for i, d in enumerate(dates)}
+    above = np.zeros((len(dates), len(etfs)))
+    total = np.zeros((len(dates), len(etfs)))
+    for run_date, ticker, val in rows:
+        i, j = date_idx.get(run_date), etf_idx.get(sector_of.get(ticker))
+        if i is None or j is None:
+            continue
+        total[i, j] += 1
+        if val > 0:
+            above[i, j] += 1
+    with np.errstate(invalid="ignore", divide="ignore"):
+        frac = above / total
+    frac[total < PARAMS["sector_timing_min_constituents"]] = np.nan
+    return frac
+
+
+def non_overlapping_top_k(dates, pred_mat, fwd_mat, horizon, k):
+    """Hold the top-k sectors by `pred` for `horizon` sessions, then re-pick — windows that do NOT
+    overlap, so each one is a genuinely independent observation. This is the honest sample size
+    the overlapping daily IC cannot give, and the number a person could actually have traded.
+    Returns per-window mean excess vs SPY of the top-k basket minus the bottom-k basket."""
+    out = []
+    i = 0
+    while i < len(dates):
+        p, f = pred_mat[i], fwd_mat[i]
+        m = ~(np.isnan(p) | np.isnan(f))
+        if m.sum() >= 2 * k:
+            order = np.argsort(p[m])
+            fv = f[m]
+            out.append({"date": dates[i], "top": float(fv[order[-k:]].mean()),
+                        "bottom": float(fv[order[:k]].mean())})
+            i += horizon
+        else:
+            i += 1
+    return out
+
+
+def run_sector_timing_research(db_path=storage.DEFAULT_DB_PATH, model_version=None,
+                               output_dir=None):
+    """Is the sector's own forward return predictable from cheap point-in-time signals? REPORT ONLY.
+
+    Two outputs:
+      * sector_timing.csv     — cross-sectional IC across the 12 sectors per day, per (predictor,
+                                horizon), corrected as one family with BH-FDR;
+      * sector_timing_holds.csv — non-overlapping top-k-minus-bottom-k windows, the tradeable
+                                  version with an honest independent count.
+    """
+    from src.config import ETF_SECTOR_LABEL, SECTOR_BENCHMARK_MAP
+    from src.patterns import benjamini_hochberg, forward_returns, load_pattern_panel
+
+    model_version = model_version or PARAMS["model_version"]
+    etfs = sector_etfs()
+    panel = load_pattern_panel(db_path=db_path, tickers=etfs + ["SPY"])
+    if panel is None or "SPY" not in panel.closes:
+        print("[research] sector timing: no SPY calendar — nothing to test")
+        return pd.DataFrame()
+    etfs = [e for e in etfs if e in panel.closes]
+    dates = panel.dates
+    spy = panel.closes["SPY"]
+    n_d, n_s = len(dates), len(etfs)
+
+    # Forward excess vs SPY per (horizon) -> matrix [dates x sectors]
+    fwd = {}
+    for h in SECTOR_TIMING_HORIZONS:
+        mat = np.full((n_d, n_s), np.nan)
+        for j, e in enumerate(etfs):
+            mat[:, j] = forward_returns(panel, e, h, benchmark="SPY")
+        fwd[h] = mat
+
+    # Predictor family 1: trailing excess momentum per lookback
+    preds = {}
+    for lb in SECTOR_TIMING_LOOKBACKS:
+        mat = np.full((n_d, n_s), np.nan)
+        for j, e in enumerate(etfs):
+            mat[:, j] = trailing_excess(panel.closes[e], spy, lb)
+        preds["momentum_%dd" % lb] = mat
+
+    # Predictor family 2: constituent breadth. Ticker -> sector ETF via the watchlist, using the
+    # SAME assignment the scoring uses (semis -> SMH), so the sector is defined identically here.
+    wl = pd.read_csv(os.path.join(os.path.dirname(os.path.dirname(__file__)), "watchlist.csv"))
+    sector_of = {}
+    for _, r in wl.iterrows():
+        if r.get("sector") == ETF_SECTOR_LABEL:
+            continue
+        b = r.get("benchmark")
+        if b in etfs:
+            sector_of[r["ticker"]] = b
+    for col, name in (("close_vs_SMA200_pct", "breadth_sma200"),
+                      ("close_vs_SMA50_pct", "breadth_sma50")):
+        preds[name] = sector_breadth_matrix(db_path, model_version, sector_of, dates, etfs, col)
+
+    rows, holds = [], []
+    for pname, pmat in preds.items():
+        for h in SECTOR_TIMING_HORIZONS:
+            daily = [daily_cross_sectional_ic(pmat[i], fwd[h][i]) for i in range(n_d)]
+            agg = _aggregate_ic_series(daily, h)
+            rows.append({"model_version": model_version, "predictor": pname, "horizon": h,
+                         "n_sectors": n_s, **agg, "generated_at": _now_iso()})
+            for w in non_overlapping_top_k(dates, pmat, fwd[h], h, SECTOR_TIMING_TOP_K):
+                holds.append({"predictor": pname, "horizon": h, "start_date": w["date"],
+                              "top_k_excess_vs_spy_pct": 100 * w["top"],
+                              "bottom_k_excess_vs_spy_pct": 100 * w["bottom"],
+                              "top_minus_bottom_pct": 100 * (w["top"] - w["bottom"])})
+
+    # One family, corrected together. 6 predictors x 4 horizons = 24 cells; at alpha 0.05 about one
+    # is expected to look significant by chance, and the reader is told so on every row.
+    p_values = [_two_sided_p(r["overlap_adjusted_t"], r["effective_independent_n"]) for r in rows]
+    survivors = set(benjamini_hochberg(p_values, PARAMS["pattern_fdr_q"]))
+    n_tested = sum(1 for p in p_values if p is not None)
+    n_nom = sum(1 for p in p_values if p is not None and p <= PARAMS["pattern_alpha"])
+    for i, r in enumerate(rows):
+        r.update({"p_value": p_values[i], "family_size": n_tested,
+                  "survives_bh_fdr": bool(i in survivors),
+                  "n_nominally_significant": n_nom,
+                  "expected_false_positives_at_alpha": round(n_tested * PARAMS["pattern_alpha"], 2)})
+
+    out_dir = _output_dir(output_dir)
+    df = pd.DataFrame(rows)
+    hd = pd.DataFrame(holds)
+    df.to_csv(os.path.join(out_dir, "sector_timing.csv"), index=False)
+    hd.to_csv(os.path.join(out_dir, "sector_timing_holds.csv"), index=False)
+
+    # Non-overlapping summary per cell: mean top-minus-bottom, hit rate, and the honest n.
+    if not hd.empty:
+        summ = (hd.groupby(["predictor", "horizon"])["top_minus_bottom_pct"]
+                  .agg(n_windows="count", mean_pct="mean",
+                       pct_positive=lambda s: 100.0 * (s > 0).mean())
+                  .reset_index())
+        summ.to_csv(os.path.join(out_dir, "sector_timing_holds_summary.csv"), index=False)
+    print("[research] sector timing: %d cells (%d tested), %d nominally significant, %.1f expected "
+          "by chance, %d surviving BH-FDR -> sector_timing.csv"
+          % (len(df), n_tested, n_nom, n_tested * PARAMS["pattern_alpha"],
+             int(df["survives_bh_fdr"].sum())))
+    return df

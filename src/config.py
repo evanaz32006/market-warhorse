@@ -266,6 +266,11 @@ PARAMS = {
     # presenting itself as a 3-week one.
     "display_horizon_days": 120,
 
+    # --- Sector timing (research only, `--research sectortiming`) --------------------------
+    # A sector's breadth reading is only meaningful with enough constituents behind it. SMH has
+    # ~40 names and XLRE ~30; below this many SCORED names on a date the fraction is noise.
+    "sector_timing_min_constituents": 8,
+
     # --- Shared research plumbing ---------------------------------------------------------------
     "calendar_ticker": "SPY",              # the ONE master session calendar (was a literal in journal.py)
     "research_output_dir": "output/research",
