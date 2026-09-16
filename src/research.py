@@ -2036,3 +2036,192 @@ def run_survivorship_analysis(output_dir=None, watchlist_path=None):
           "corrected number needs the missing names re-scored against the widened universe, since a "
           "percentile is a rank against peers." % total_missing)
     return summary
+
+
+# ---------------------------------------------------------------------------
+# (j) Regime TIMING — does macro state predict the index's own return?  REPORT ONLY
+# ---------------------------------------------------------------------------
+
+# WHY THIS QUESTION AND NOT THE OBVIOUS ONE. The tempting test is "does the model's edge differ by
+# regime", but it cannot be run honestly here: the snapshots begin 2024-06, so splitting 2.2 years
+# into regime terciles leaves roughly ONE independent 120-day window per bucket. That is not a low-
+# powered test, it is no test. Rather than run it and decorate the null with caveats, this asks the
+# question the available data CAN answer.
+#
+# The index's own forward return needs no snapshots at all — only SPY's price history (1993+) and
+# macro series (VIX 1990+, the curve 1976+). That is ~8,400 overlapping sessions, about 70
+# independent 120-day windows, which is real power for the first time in this project. It is also
+# the question that addresses the structural gap: the ranking is sector-NEUTRAL and says nothing
+# about whether to be in the market at all, so a perfect stock-picker still loses money in a falling
+# one.
+#
+# PRE-REGISTERED READING, written before any number was seen:
+#
+#   H1  HIGH VIX predicts HIGHER forward index returns at 20-120d. The volatility risk premium and
+#       simple mean reversion both point this way: being paid to hold risk when others will not is
+#       among the better-documented effects in the literature. Expect POSITIVE lift in the top VIX
+#       tercile and negative in the bottom.
+#   H2  An INVERTED yield curve (T10Y2Y < 0) predicts LOWER forward returns, but with a long and
+#       notoriously variable lead — 6 to 18 months. So expect the effect, if any, at 120d and 252d
+#       rather than 20d, and expect it to be weak: the sample contains only a handful of distinct
+#       inversion episodes however many days they span, which is exactly what the effective
+#       independent count is there to reveal.
+#   H3  Credit spreads: no directional prediction registered. The free series covers only ~3 years
+#       (see macro.MACRO_SERIES), so its percentile means something different from the others and it
+#       is included for completeness, not as a test.
+#
+#   FALSIFICATION: no tercile difference, or signs opposite to the above.
+#   If the SHORT horizon shows a large effect while the long one shows none, suspect the alignment
+#   before believing it — the documented effects here are slow.
+#
+# RESULT, run 2026-09-16 over 8,465 sessions (1993-01-29 .. 2026-09-16), 44 cells:
+#
+#   NOTHING SURVIVES. 0 of 28 testable cells clear Bonferroni or BH-FDR, and the family's shared
+#   circular-shift null puts the observed max |t| of 1.10 at p = 0.906 — the best result in the
+#   family is WORSE than 90% of random rotations of the same conditions. This is the best-powered
+#   null the project has produced: 48 independent 120-day windows for the VIX conditions, against
+#   the 4-and-under counts that made the insider and short-window sector studies "cannot tell".
+#
+#   H1 (VIX) is directionally right and statistically absent. High-VIX lift is POSITIVE at all four
+#   horizons (+0.40 / +1.04 / +1.36 / +0.78 pct) and low-VIX negative at 20d and 60d, exactly as
+#   registered, with the sign holding out of sample at three of four horizons. But |t| <= 1.07
+#   throughout. The volatility risk premium shows up in the SIGN and not in the magnitude — which,
+#   with this much power, is evidence the daily-bar version of the effect is genuinely small rather
+#   than evidence it is hidden.
+#
+#   H2 (curve inversion) is not confirmed: lift flips sign across horizons (+0.18 / -0.18 / +0.22 /
+#   -1.70) with |t| <= 0.35. Note the effective count — 1,039 inverted DAYS are only 8 independent
+#   252-day windows, which is the whole reason the raw day count is never the sample size here.
+#
+# TWO VARIABLES WERE STRUCTURALLY UNUSABLE AS CONFIGURED, and that is a finding about the variables
+# rather than about the market:
+#
+#   * treasury_10y produced ZERO days in its high tercile, across 33 years. The 10-year yield has
+#     fallen secularly since 1981, so against an EXPANDING window starting in 1962 no recent day is
+#     ever "high". A non-stationary LEVEL cannot be a regime variable this way — it would need a
+#     CHANGE (e.g. the 120-day move in yield), which is stationary. Left as-is and reported rather
+#     than quietly swapped: changing the variable after seeing the result is how a search becomes a
+#     fishing trip.
+#   * the credit spreads have only ~3 years of free history, so their "high" tercile catches 26-39
+#     days = 1-4 independent episodes. The harness REFUSED them: 16 of 44 cells fell below the
+#     inference floor and were described without a t, a p, or a vote in the family correction. Their
+#     headline lifts (+18%, +20%) are exactly the artefact that floor exists to suppress, and are the
+#     same failure mode as the "SPY down 5 days in a row, n=2, t=185" cell that prompted it.
+#
+# Every correction the pattern harness applies is applied here, because this reuses `run_family`
+# outright: Bonferroni, BH-FDR, a shared circular-shift family null, a chronological out-of-sample
+# split, the minimum detectable effect, and the effective INDEPENDENT trigger count rather than the
+# raw day count. Regime conditions are heavily autocorrelated — VIX stays high for months — so the
+# distinction between 800 trigger days and 6 independent episodes is the entire ballgame.
+
+REGIME_HORIZONS = [20, 60, 120, 252]
+REGIME_TERCILE_LO = 33.3
+REGIME_TERCILE_HI = 66.7
+
+
+def macro_aligned_percentile(history, series_id, dates, max_staleness_days=None):
+    """The causal expanding percentile of `series_id`, as of each date in `dates`.
+
+    Two gates, both necessary. The percentile itself is EXPANDING (macro.expanding_percentile), so a
+    regime label never uses a distribution from the future. The alignment is AS-OF, taking the last
+    observation at or before each date, so a macro reading published on Tuesday cannot label Monday.
+    A reading older than the staleness cap yields NaN rather than being carried forward."""
+    from src import macro
+    max_staleness_days = (max_staleness_days if max_staleness_days is not None
+                          else PARAMS["macro_max_staleness_days"])
+    frame = macro.regime_frame(history, series_id)
+    if frame.empty:
+        return np.full(len(dates), np.nan)
+    m_dates = np.asarray(frame["date"].values)
+    m_pct = np.asarray(frame["pctile"].values, dtype=float)
+    out = np.full(len(dates), np.nan)
+    for i, d in enumerate(dates):
+        pos = np.searchsorted(m_dates, d, side="right") - 1
+        if pos < 0 or np.isnan(m_pct[pos]):
+            continue
+        age = (date.fromisoformat(d) - date.fromisoformat(str(m_dates[pos]))).days
+        if age > max_staleness_days:
+            continue
+        out[i] = m_pct[pos]
+    return out
+
+
+def macro_aligned_level(history, series_id, dates, max_staleness_days=None):
+    """The raw LEVEL of `series_id` as of each date — same as-of and staleness discipline.
+
+    Needed because some regimes are defined by a level rather than a rank: an inverted curve is
+    T10Y2Y < 0, which is a fact about the economy, not about where today sits in its own history."""
+    from src import macro
+    max_staleness_days = (max_staleness_days if max_staleness_days is not None
+                          else PARAMS["macro_max_staleness_days"])
+    sub = history[history["series_id"] == series_id].sort_values("date")
+    if sub.empty:
+        return np.full(len(dates), np.nan)
+    m_dates = np.asarray(sub["date"].values)
+    m_val = np.asarray(sub["value"].values, dtype=float)
+    out = np.full(len(dates), np.nan)
+    for i, d in enumerate(dates):
+        pos = np.searchsorted(m_dates, d, side="right") - 1
+        if pos < 0 or np.isnan(m_val[pos]):
+            continue
+        age = (date.fromisoformat(d) - date.fromisoformat(str(m_dates[pos]))).days
+        if age > max_staleness_days:
+            continue
+        out[i] = m_val[pos]
+    return out
+
+
+def regime_conditions(history, dates):
+    """The pre-registered regime conditions as pattern Conditions (name + boolean mask).
+
+    Terciles are cut on the CAUSAL percentile, so "high VIX" means "high against everything known
+    up to that day" — never against a distribution that includes the future."""
+    from src.patterns import Condition
+    from src import macro
+    conds = []
+    for sid, spec in macro.MACRO_SERIES.items():
+        label = spec["label"]
+        pct = macro_aligned_percentile(history, sid, dates)
+        conds.append(Condition(name="%s_high" % label,
+                               mask=np.nan_to_num(pct, nan=-1.0) >= REGIME_TERCILE_HI))
+        low = (pct <= REGIME_TERCILE_LO) & ~np.isnan(pct)
+        conds.append(Condition(name="%s_low" % label, mask=low))
+    # A level-defined regime, not a rank-defined one: inversion is a fact, not a percentile.
+    curve = macro_aligned_level(history, "T10Y2Y", dates)
+    conds.append(Condition(name="yield_curve_inverted",
+                           mask=(curve < 0) & ~np.isnan(curve)))
+    return conds
+
+
+def run_regime_timing_research(output_dir=None, cache_path=None, macro_cache=None):
+    """Does macro regime predict the INDEX's own forward return? REPORT ONLY.
+
+    Uses SPY's full history against FRED macro series — no feature_snapshots, so it is unaffected by
+    which model version is live and needs no backfill. Corrected as ONE family via patterns.run_family.
+    """
+    from src import macro
+    from src.patterns import run_family
+
+    series = sector_long_history_cache(cache_path=cache_path, tickers=["SPY"])
+    if "SPY" not in series:
+        print("[research] regime timing: no SPY long history cached — nothing to test")
+        return pd.DataFrame()
+    history = macro.build_macro_history(cache_path=macro_cache)
+    if history.empty:
+        print("[research] regime timing: no macro history cached — nothing to test")
+        return pd.DataFrame()
+
+    panel = build_long_panel(series, calendar_ticker="SPY")
+    dates = panel.dates
+    conds = regime_conditions(history, dates)
+    covered = {c.name: int(c.mask.sum()) for c in conds}
+    print("[research] regime timing: %d sessions %s .. %s; condition day-counts %s"
+          % (len(dates), dates[0], dates[-1], covered))
+
+    specs = [(c, "SPY", h, None) for c in conds for h in REGIME_HORIZONS]
+    df = run_family(panel, specs, family_name="regime_timing")
+
+    out_dir = _output_dir(output_dir)
+    df.to_csv(os.path.join(out_dir, "regime_timing.csv"), index=False)
+    print("[research] regime timing: %d cells -> regime_timing.csv" % len(df))
+    return df

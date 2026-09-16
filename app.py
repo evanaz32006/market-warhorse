@@ -640,7 +640,7 @@ def main():
                               "on the CURRENT (gap-repaired) price cache to be comparable to them")
     parser.add_argument("--research", choices=["decay", "walkforward", "quality", "shorthorizon", "backtest",
                                   "sizedecay", "patterns", "insider", "events", "sectortiming", "sectorlong",
-                                  "survivorship", "all"],
+                                  "survivorship", "regime", "all"],
                          help="run an opt-in RESEARCH analysis (report only — changes no score, "
                               "weight or model_version) and exit, never on the nightly path")
     parser.add_argument("--backup", nargs="?", const="", metavar="DEST_DIR",
@@ -713,6 +713,10 @@ def main():
             research.run_event_research(db_path=db_path, model_version=version)
         if args.research in ("insider", "all"):
             research.run_insider_research(db_path=db_path, model_version=version)
+        if args.research in ("regime", "all"):
+            # No model_version and no snapshots: SPY's own history against FRED macro series, which
+            # is why it has ~70 independent windows where a snapshot-based regime test would have ~1.
+            research.run_regime_timing_research()
         if args.research in ("survivorship", "all"):
             # Takes no model_version: it compares the WATCHLIST against reconstructed index
             # membership, so it describes the universe every version shares, not any one model.

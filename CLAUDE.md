@@ -92,3 +92,10 @@ thing AND check they read the same amount.
 its live side under an invented `model_version`, so the setting it existed to protect was never
 exercised; it passed happily with the bug reintroduced. A test that has never failed has not been
 tested.
+
+**An expanding percentile on a trending series is degenerate.** Classifying regime by "where does
+today sit in all history so far" is the right defence against lookahead, but it only works on a
+STATIONARY series. The 10-year Treasury yield has fallen secularly since 1981, so against an
+expanding window from 1962 it produced **zero** days in its high tercile across 33 years — the
+condition existed, was tested, and could never fire. A level that trends needs a change-based
+transform before it can define a regime.
