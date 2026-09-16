@@ -18,6 +18,7 @@ import re
 import time
 from bisect import bisect_right
 from datetime import date, datetime, timezone
+from functools import lru_cache
 
 import pandas as pd
 import requests
@@ -377,9 +378,14 @@ def _resolve_ttm(facts):
     return None, None, None
 
 
+@lru_cache(maxsize=1)
 def concept_tags():
-    """Every XBRL tag any concept chain can resolve — the only tags the resolver ever reads."""
-    return sorted({_split_tag(spec)[1] for chain in EDGAR_CONCEPT_TAGS.values() for spec in chain})
+    """Every XBRL tag any concept chain can resolve — the only tags the resolver ever reads.
+
+    Cached because the live path now calls it once per ticker per night (~1,500 times) and the
+    answer is a pure function of a config constant that cannot change mid-process."""
+    return tuple(sorted({_split_tag(spec)[1]
+                         for chain in EDGAR_CONCEPT_TAGS.values() for spec in chain}))
 
 
 def build_facts_index(tickers, db_path=storage.DEFAULT_DB_PATH, extra_tags=()):
@@ -403,15 +409,23 @@ def build_facts_index(tickers, db_path=storage.DEFAULT_DB_PATH, extra_tags=()):
     return index
 
 
-def _facts_as_of(ticker, as_of_date, facts_index, db_path):
+def _facts_as_of(ticker, as_of_date, facts_index, db_path, tags=None):
     """The ticker's facts filed on or before as_of_date — THE no-lookahead gate for fundamentals.
 
     Two routes to the same guarantee: SQL (`filed_date <= ?`) when reading the DB directly, or a bisect
     on the pre-sorted filed_date list when a prepared index is supplied. bisect_right returns the count
     of entries <= as_of_date, so the slice is exactly the facts that existed on that date — no fact
-    filed later can be in it."""
+    filed later can be in it.
+
+    `tags` restricts the SQL route to a tag set, which is what the INDEX route has always done
+    (build_facts_index is tag-filtered). Without it the two routes returned the same ANSWER from very
+    different amounts of data: measured at 20,935 facts per ticker unfiltered vs 1,894 filtered, and
+    20.1s vs 1.2s over 60 tickers. The extra rows were inert — the resolver only ever looks up tags in
+    EDGAR_CONCEPT_TAGS — so this is a pure read-volume fix, not a change of result. It is what makes
+    resolving the whole universe on the live path cost ~30s instead of ~9 minutes."""
     if facts_index is None:
-        return storage.load_edgar_facts(ticker, filed_on_or_before=as_of_date, db_path=db_path)
+        return storage.load_edgar_facts(ticker, filed_on_or_before=as_of_date, tags=tags,
+                                        db_path=db_path)
     entry = facts_index.get(ticker)
     if not entry:
         return []
@@ -429,7 +443,7 @@ def get_fundamentals_as_of(ticker, as_of_date, price=None, sector=None, db_path=
 
     A concept that can't be resolved is None (missing) → its component sits out downstream. Financials/
     REITs get their COGS/operating-margin concept sat out (not comparable), per the spec."""
-    facts = _facts_as_of(ticker, as_of_date, facts_index, db_path)
+    facts = _facts_as_of(ticker, as_of_date, facts_index, db_path, tags=concept_tags())
     by_tag = {}
     for f in facts:
         by_tag.setdefault((f["taxonomy"], f["tag"]), []).append(f)

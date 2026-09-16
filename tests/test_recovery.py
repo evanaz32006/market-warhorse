@@ -114,20 +114,27 @@ def test_recovery_writes_live_recovered_rows_flagged():
                                  backfilled=False, get_earnings=lambda _t: (None, True),
                                  get_fundamentals=lambda _t: {})
 
-    recovered = app._recover_missing_days(
-        wl, histories, db,
-        fundamentals_map={"T1": {"trailing_pe": 10}, "T2": {"trailing_pe": 20}},
-        fundamentals_as_of="2026-07-10",
-    )
+    recovered = app._recover_missing_days(wl, histories, db)
     assert [r["run_date"] for r in recovered] == ["2026-07-07", "2026-07-08", "2026-07-09"]
 
-    # Each recovered day is a LIVE row (backfilled=0) flagged recovered=1 with fundamentals_as_of set.
+    # Each recovered day is a LIVE row (backfilled=0) flagged recovered=1.
+    #
+    # v0.6 CHANGED WHAT fundamentals_as_of MEANS HERE, and the change is the point of this assertion.
+    # It used to be the date of the single live fetch (today), stamped onto every recovered day as an
+    # honest staleness flag - the recovered row carried TODAY's fundamentals on a PAST date. Now each
+    # day resolves its own from EDGAR gated to itself, so fundamentals_as_of IS the recovered date and
+    # fundamentals_pit is 1. The mutation this kills: passing `run_date` of the current run, or any
+    # single shared date, into the recovery loop - which would put a future filing on a past day and
+    # break the no-lookahead invariant, not merely stale-flag it.
     for d in ("2026-07-07", "2026-07-08", "2026-07-09"):
         snaps = storage.load_snapshots_for_date(PARAMS["model_version"], d, db_path=db)
         assert snaps, f"no snapshot written for recovered day {d}"
         assert all(s["backfilled"] == 0 for s in snaps)         # LIVE, not backfill
         assert all(s["recovered"] == 1 for s in snaps)          # flagged recovered
-        assert all(s["fundamentals_as_of"] == "2026-07-10" for s in snaps)
+        assert all(s["fundamentals_as_of"] == d for s in snaps), (
+            "a recovered day must resolve fundamentals as of ITSELF, never as of the run that "
+            "happened to notice it was missing")
+        assert all(s["fundamentals_pit"] == 1 for s in snaps)
 
     # A recovered day now counts as live, so it's no longer a gap next pass (idempotent / converged).
     assert app._missing_live_days(

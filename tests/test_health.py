@@ -145,33 +145,76 @@ def test_export_writes_only_the_active_version_by_default(tmp_path):
     assert set(hist_full["model_version"]) == {PARAMS["model_version"], "v0.1_price_volume_only"}
 
 
-def test_frozen_versions_are_skipped_but_their_report_rows_are_carried_forward(tmp_path):
-    """A frozen version's snapshots are immutable, so re-deriving its forward returns nightly can only
-    reproduce the same numbers. Skipping it must NOT drop it from the report - a version vanishing
-    reads as 'it stopped performing' rather than 'it stopped being recomputed'."""
+def _frozen_fixture(tmp_path, calendar_sessions):
+    """A tmp DB holding ONE snapshot of a frozen version on the first session of `calendar_sessions`,
+    plus a pre-existing report already carrying that version's rows. The calendar length is the
+    variable under test: it decides whether the snapshot's 120d forward return has elapsed."""
     import os
     import pandas as pd
-    from src import evaluation, storage
-    from src.config import FROZEN_MODEL_VERSIONS, PARAMS
+    from src import storage
+    from src.config import FROZEN_MODEL_VERSIONS
     frozen = sorted(FROZEN_MODEL_VERSIONS)[0]
     db = str(tmp_path / "f.db")
     storage.init_db(db)
     out = str(tmp_path / "o")
     os.makedirs(out, exist_ok=True)
 
-    # a pre-existing report already containing the frozen version's rows
+    dates = [f"2025-{1 + i // 28:02d}-{1 + i % 28:02d}" for i in range(calendar_sessions)]
+    storage.upsert_price_rows([_spy(d) for d in dates], db_path=db)
     pd.DataFrame([{"report_type": "bucket", "model_version": frozen, "horizon": "20d",
                    "label": "strong", "n": 42, "avg_future_excess_return": 0.01}]).to_csv(
         os.path.join(out, "performance_review.csv"), index=False)
-
     storage.upsert_feature_snapshots([
-        {"run_date": "2025-01-02", "ticker": "T1", "benchmark": "SPY", "model_version": frozen,
+        {"run_date": dates[0], "ticker": "SPY", "benchmark": "SPY", "model_version": frozen,
          "timestamp_fetched": "t", "backfilled": 1, "earnings_risk_unknown": 1, "score_20d": 50.0}],
         db_path=db)
+    return frozen, db, out
+
+
+def test_exhausted_frozen_version_is_skipped_but_its_report_rows_are_carried_forward(tmp_path):
+    """Once a frozen version's NEWEST snapshot has matured at the longest horizon it really can't
+    produce a new number, so skipping it is free. Skipping must NOT drop it from the report - a
+    version vanishing reads as 'it stopped performing' rather than 'it stopped being recomputed'."""
+    from src import evaluation
+    frozen, db, out = _frozen_fixture(tmp_path, calendar_sessions=200)   # 120d elapsed
 
     review = evaluation.run_evaluation(db_path=db, output_dir=out)
-    # the frozen version was not recomputed, but its prior rows survive
     assert frozen in set(review["model_version"]), "frozen version dropped from the report entirely"
+    # A carried-forward row must be VISIBLY stale. Before this stamp existed, a number computed weeks
+    # ago sat in the CSV indistinguishable from one computed tonight.
+    carried = review[review["model_version"] == frozen]
+    assert carried["recomputed_on"].isna().all(), "carried-forward rows must not claim today's date"
+
+
+def test_a_frozen_version_that_is_still_maturing_is_recomputed_anyway(tmp_path):
+    """THE BUG THIS ENCODES (found 2026-09-16). "Frozen" was taken to mean "its numbers can never
+    change", but a snapshot's forward return is not known until D+horizon has ELAPSED IN REAL PRICE
+    HISTORY. So every night the calendar advances, more of a frozen version's EXISTING snapshots
+    mature for the first time. v0.4 was frozen on 2026-08-21 holding snapshots through 2026-08-17;
+    its 120d metrics were pinned to whatever sample was ripe that day and carried forward unchanged,
+    and unlabelled, ever since.
+
+    A version on the frozen list whose newest snapshot has NOT matured at 120d must therefore still
+    be recomputed. The mutation this kills: dropping the exhaustion check and skipping on name alone."""
+    from src import evaluation
+    frozen, db, out = _frozen_fixture(tmp_path, calendar_sessions=30)    # 120d has NOT elapsed
+
+    review = evaluation.run_evaluation(db_path=db, output_dir=out)
+    assert frozen in set(review["model_version"])
+    carried = review[review["model_version"] == frozen]
+    assert carried["recomputed_on"].notna().all(), (
+        "a still-maturing frozen version was carried forward instead of recomputed - its metrics "
+        "would silently stop updating while looking current")
+
+
+def test_exhaustion_check_treats_an_unknown_calendar_as_not_exhausted(tmp_path):
+    """The safe branch is the one that recomputes: no snapshots, or a snapshot date absent from the
+    calendar, must never be read as 'finished'."""
+    from src import evaluation, storage
+    db = str(tmp_path / "u.db")
+    storage.init_db(db)
+    assert evaluation._frozen_version_is_exhausted("nope", [], db_path=db) is False
+    assert evaluation._frozen_version_is_exhausted("nope", ["2025-01-02"], db_path=db) is False
 
 
 # ---------------------------------------------------------------------------

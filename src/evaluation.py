@@ -11,6 +11,7 @@ coefficient) with descriptive, never-auto-applied suggested weight-change notes.
 
 import math
 import os
+from datetime import datetime, timezone
 
 import pandas as pd
 
@@ -573,6 +574,53 @@ def build_performance_review(evaluated_rows, min_sample_size=None, model_version
     return pd.DataFrame(report_rows)
 
 
+def _frozen_version_is_exhausted(model_version, calendar, db_path=storage.DEFAULT_DB_PATH):
+    """True when recomputing this version really could not produce a new number.
+
+    That is the case only when its NEWEST snapshot has already matured at the LONGEST horizon: once
+    D+120 has elapsed for the last snapshot it holds, every earlier one matured before it, so the
+    whole version is final and skipping it is free. Until then the version still gains evaluable
+    rows every night the calendar advances, and skipping it silently pins its metrics to whatever
+    sample happened to be ripe on the day it was added to FROZEN_MODEL_VERSIONS.
+
+    Unknown (no snapshots, or a snapshot date missing from the calendar) -> NOT exhausted, so the
+    safe branch is the one that recomputes."""
+    last = storage.latest_snapshot_date(model_version, db_path=db_path)
+    if not last or not calendar:
+        return False
+    return maturity_date(calendar, last, max(HORIZONS)) is not None
+
+
+def review_path_for(output_dir):
+    """Where performance_review.csv lives. One definition, because the rolling-refresh chooser and
+    the writer must agree on the file they are reading staleness from and writing freshness to."""
+    return os.path.join(output_dir, "performance_review.csv")
+
+
+def _rolling_frozen_refresh(maturing, review_path, per_run):
+    """Pick which still-maturing frozen versions to recompute THIS run: the `per_run` with the oldest
+    `recomputed_on` in the existing report, unseen versions first.
+
+    Oldest-first is what makes the rotation fair and bounded — without it the same version would be
+    chosen every night and the others would never refresh at all. A version absent from the prior
+    report (or a report predating the stamp) sorts first: it has no evidence of ever being computed."""
+    if not maturing or per_run <= 0:
+        return []
+    last_seen = {}
+    if os.path.exists(review_path):
+        try:
+            prior = pd.read_csv(review_path)
+            if "recomputed_on" in prior.columns and "model_version" in prior.columns:
+                for v, grp in prior.groupby("model_version"):
+                    vals = grp["recomputed_on"].dropna()
+                    if len(vals):
+                        last_seen[v] = str(vals.max())
+        except Exception as e:
+            print(f"[evaluation] could not read prior report for refresh ordering ({e}) — "
+                  f"treating every frozen version as never refreshed")
+    return sorted(maturing, key=lambda v: (last_seen.get(v) or "", v))[:per_run]
+
+
 def run_evaluation(db_path=storage.DEFAULT_DB_PATH, model_version=None, output_dir=None,
                    return_rows=False, include_frozen=False):
     """Orchestrates evaluate_all_snapshots -> build_performance_review -> CSV. Safe to call
@@ -596,13 +644,47 @@ def run_evaluation(db_path=storage.DEFAULT_DB_PATH, model_version=None, output_d
 
     # FROZEN versions are skipped on the nightly path. v0.1 (259k rows) and v0.4 (278k rows) were being
     # re-joined forward-return-by-forward-return from scratch every single night — a growing Python
-    # loop over rows that are immutable and can never produce a new number. Their last computed report
-    # rows are preserved below, so the CSV still shows them side by side; they are just not recomputed.
+    # loop over rows that can never gain a new SNAPSHOT. Their last computed report rows are preserved
+    # below, so the CSV still shows them side by side.
     # `include_frozen=True` (or naming one explicitly) forces a full recompute when that is the point.
+    #
+    # CORRECTION (2026-09-16). The original justification here said frozen rows "can never produce a
+    # new number." THAT WAS WRONG, and it was quietly costing the report accuracy. A snapshot's
+    # forward return is not known until D+horizon has ELAPSED IN REAL PRICE HISTORY, so every night
+    # that the calendar advances, more of a frozen version's existing snapshots mature and become
+    # evaluable for the first time. v0.4 was frozen on 2026-08-21 with snapshots running to
+    # 2026-08-17; its 120-day metrics therefore describe only the snapshots ripe on the day it was
+    # frozen, and have been carried forward unchanged — and unlabelled — ever since.
+    #
+    # So the eligibility test is no longer "is it on the list" but "is it on the list AND genuinely
+    # exhausted": every snapshot it holds has already matured at the LONGEST horizon, meaning a
+    # recompute really would reproduce the same numbers. Those are skipped for free, forever.
+    #
+    # A listed-but-STILL-MATURING version is the awkward case, and neither extreme is right.
+    # Recomputing them all nightly restores exactly the cost the freeze existed to remove (measured
+    # 2026-09-16: ~60s per 278k rows, so v0.1+v0.3+v0.4+v0.5 together add ~8 minutes to a run that
+    # takes 8-13). Skipping them all leaves their metrics silently pinned forever. So they are
+    # refreshed on a ROLLING basis, oldest-first, `eval_frozen_refresh_per_run` per night - the same
+    # pattern the fundamentals and EDGAR refreshes already use here. Cost is bounded to one version
+    # per run; staleness is bounded by the number of still-maturing frozen versions, and whatever
+    # staleness remains is now VISIBLE in the `recomputed_on` column rather than implied.
     skipped_frozen = []
     if not model_version and not include_frozen:
-        skipped_frozen = [v for v in versions if v in FROZEN_MODEL_VERSIONS]
-        versions = [v for v in versions if v not in FROZEN_MODEL_VERSIONS]
+        calendar = trading_calendar(db_path)
+        exhausted, maturing = [], []
+        for v in versions:
+            if v not in FROZEN_MODEL_VERSIONS:
+                continue
+            (exhausted if _frozen_version_is_exhausted(v, calendar, db_path) else maturing).append(v)
+
+        refresh = _rolling_frozen_refresh(maturing, review_path_for(output_dir),
+                                          PARAMS["eval_frozen_refresh_per_run"])
+        if maturing:
+            deferred = [v for v in maturing if v not in refresh]
+            print(f"[evaluation] frozen but still maturing: {maturing}; refreshing {refresh} this "
+                  f"run, carrying forward {deferred} (their `recomputed_on` shows how stale they are)")
+        skipped_frozen = exhausted + [v for v in maturing if v not in refresh]
+        versions = [v for v in versions if v not in skipped_frozen]
 
     reviews, total_evaluable, all_rows = [], 0, []
     for v in versions:
@@ -614,16 +696,26 @@ def run_evaluation(db_path=storage.DEFAULT_DB_PATH, model_version=None, output_d
             reviews.append(review)
 
     review_df = pd.concat(reviews, ignore_index=True) if reviews else pd.DataFrame()
-    review_path = os.path.join(output_dir, "performance_review.csv")
+    review_path = review_path_for(output_dir)
 
     # Carry forward the previously-computed rows for any frozen version so the report keeps showing
     # every version side by side. Dropping them would look like the older versions had stopped
     # performing rather than simply stopped being recomputed.
+    #
+    # Every row carries `recomputed_on`, the date its numbers were actually derived. A carried-forward
+    # row keeps the older date it was computed on, so a reader (or the journal) can see at a glance
+    # that a frozen version's metrics are not from tonight. Without this stamp a stale row and a fresh
+    # row are indistinguishable in the CSV, which is how a number stops being questioned.
+    today = datetime.now(timezone.utc).date().isoformat()
+    if not review_df.empty:
+        review_df["recomputed_on"] = today
     if skipped_frozen and os.path.exists(review_path):
         try:
             prior = pd.read_csv(review_path)
-            kept = prior[prior["model_version"].isin(skipped_frozen)]
+            kept = prior[prior["model_version"].isin(skipped_frozen)].copy()
             if not kept.empty:
+                if "recomputed_on" not in kept.columns:
+                    kept["recomputed_on"] = None      # predates the stamp; unknown, never today
                 review_df = pd.concat([review_df, kept], ignore_index=True)
         except Exception as e:
             print(f"[evaluation] could not carry forward frozen-version rows ({e}) — "

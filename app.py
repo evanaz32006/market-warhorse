@@ -20,10 +20,15 @@ import pandas as pd
 
 from src import brief, data, display, evaluation, features, journal, scoring, storage, universe, utils
 from src.config import (
+    EARNINGS_PENALTIES,
     EDGAR_MODEL_VERSION,
+    EDGAR_UNAVAILABLE_FIELDS,
     EXPANDED_MODEL_VERSION,
     ETF_SECTOR_LABEL,
     FUNDAMENTAL_FIELDS,
+    LIVE_EARNINGS_PENALTY_VERSIONS,
+    LIVE_PIT_MODEL_VERSION,
+    NO_EARNINGS_PENALTIES,
     PARAMS,
     SECTOR_NEUTRAL_COMPOSITES,
     SECTOR_NORMALIZE,
@@ -63,20 +68,31 @@ def _normalize_sector(raw_sector):
     return SECTOR_NORMALIZE.get(raw_sector, raw_sector)
 
 
-def _warn_sparse_fundamentals(features_by_ticker):
+def _warn_sparse_fundamentals(features_by_ticker, unavailable=EDGAR_UNAVAILABLE_FIELDS):
     """Warn (never crash) if more than the configured fraction of the scored universe is
     missing a given fundamental field on a live run — an early sign of a data-source problem.
-    Only meaningful on live runs (every backfill row is 100% missing by design)."""
+
+    Fields the configured source structurally cannot supply are EXCLUDED from the warning and
+    reported once as a quiet roll-call instead. Since v0.6 the live path resolves from EDGAR, where
+    seven of these fields are permanently None by design; warning about them nightly would print
+    seven unfixable lines forever and train the reader to skip the whole block — see
+    EDGAR_UNAVAILABLE_FIELDS. The check still fires loudly for every field EDGAR IS expected to
+    provide, which is where a genuine source failure would show up."""
     n = len(features_by_ticker)
     if n == 0:
         return
     threshold = PARAMS["fundamental_sparse_warn_pct"]
     for field in FUNDAMENTAL_FIELDS:
+        if field in unavailable:
+            continue
         missing = sum(1 for feat in features_by_ticker.values() if feat.get(field) is None)
         frac = missing / n
         if frac > threshold:
             print(f"[app] WARNING: fundamental field '{field}' missing for {missing}/{n} "
                   f"({frac:.0%}) of the scored universe — check the data source.")
+    if unavailable:
+        print(f"[app] note: {len(unavailable)} fundamental field(s) are not available from the "
+              f"configured source by design and were not checked: {', '.join(sorted(unavailable))}")
 
 
 def _call_get_fundamentals(fn, ticker, feat):
@@ -96,6 +112,34 @@ def _call_get_fundamentals(fn, ticker, feat):
     return fn(ticker, feat) if n_params >= 2 else fn(ticker)
 
 
+def edgar_fundamentals_resolver(as_of_date, sector_by_ticker, db_path, facts_index=None):
+    """The ONE way any scoring path gets fundamentals: EDGAR facts gated to filed_date <= as_of_date.
+
+    Returns a two-arg provider `(ticker, feat) -> ratio dict`, closed over `as_of_date` so a caller
+    physically cannot resolve a date other than the one it asked for.
+
+    This exists because the live path and the backfill path used to answer "what were this company's
+    fundamentals on date D" two different ways — yfinance's CURRENT snapshot live, EDGAR point-in-time
+    on backfill — while writing rows under ONE model_version. That made every historical metric a
+    description of a model that was not the one running nightly (see LIVE_PIT_MODEL_VERSION). Both
+    paths now call this, so the question has exactly one answer.
+
+    Two no-lookahead guarantees, both structural rather than conventional:
+      - `get_fundamentals_as_of` reads only facts with filed_date <= as_of_date (enforced in SQL);
+      - market-cap ratios use THAT DAY'S close, feat["latest_close"], never today's price against a
+        historical share count.
+    """
+    from src import edgar
+
+    def get_fund(ticker, feat, _d=as_of_date):
+        return edgar.get_fundamentals_as_of(
+            ticker, _d, price=feat.get("latest_close"),
+            sector=_normalize_sector(sector_by_ticker.get(ticker)), db_path=db_path,
+            facts_index=facts_index)
+
+    return get_fund
+
+
 def run_scoring_for_date(run_date, included, histories, db_path, backfilled, get_earnings,
                          get_fundamentals=None, recovered=False, fundamentals_as_of=None,
                          model_version=None, fundamentals_pit=False):
@@ -105,12 +149,26 @@ def run_scoring_for_date(run_date, included, histories, db_path, backfilled, get
     needed for the printed ranked table. Shared by both the live path and the backfill loop
     so the two never drift out of sync with each other.
 
-    get_fundamentals(ticker) -> raw fundamentals dict for the live path; defaults to a function
-    returning {} so backfill rows carry NO fundamentals (they can't be reconstructed
-    historically) — every fundamental field is then None and value/quality/short components sit
-    out, leaving a valid price/volume-only score under the v0.2 weights."""
+    get_fundamentals(ticker) or (ticker, feat) -> raw fundamentals dict. Since v0.6 EVERY scoring
+    path passes `edgar_fundamentals_resolver(D, ...)`, so live, recovered and backfilled rows all
+    answer "what were this company's fundamentals on D" the same way. The default — a function
+    returning {} — is the pre-EDGAR behaviour, kept for v0.1-v0.3 style runs and tests: every
+    fundamental field is then None and value/quality/short components sit out, leaving a valid
+    price/volume-only score.
+
+    `backfilled` now marks only HOW a row was produced (reconstructed in bulk vs written by the
+    nightly run), not WHAT model produced it. Those were the same distinction until v0.6, which is
+    how one version string came to hold two different models."""
     get_fundamentals = get_fundamentals or (lambda _ticker, _feat=None: {})
     model_version = model_version or PARAMS["model_version"]
+
+    # The near-earnings penalty is a LIVE-ONLY adjustment (a backfilled row has no reconstructable
+    # earnings date, so it never fired there). Deciding it from the model_version HERE, in the one
+    # function both paths call, is what stops the live and backfilled halves of a version from
+    # drifting apart again: there is no per-caller flag to forget to pass. See
+    # LIVE_EARNINGS_PENALTY_VERSIONS for why v0.6 switches it off.
+    earnings_penalties = (EARNINGS_PENALTIES if model_version in LIVE_EARNINGS_PENALTY_VERSIONS
+                          else NO_EARNINGS_PENALTIES)
 
     features_by_ticker = {}
     for ticker, benchmark, _sector in included:
@@ -157,6 +215,7 @@ def run_scoring_for_date(run_date, included, histories, db_path, backfilled, get
         horizon_scores = scoring.compute_horizon_scores(
             components, days_until_earnings=days_until_earnings,
             earnings_risk_unknown=earnings_missing, ticker=ticker,
+            earnings_penalties=earnings_penalties,
         )
 
         snapshot_row = dict(feat)
@@ -244,9 +303,13 @@ def _run_live(watchlist, histories, latest_dates, db_path):
         print("[app] no tickers had fresh data for this run_date — nothing to score.")
         return None
 
-    # Fundamentals are a LIVE-ONLY factor (point-in-time as of fetch, not backfillable). Fetch
-    # them once for the scored tickers, throttled + cached; a failed ticker just sits out.
     scored_tickers = [t for t, _b, _s in included]
+
+    # Refresh the yfinance fundamentals cache — for the EDGAR VALIDATION GATE ONLY. As of v0.6 this
+    # does NOT feed scoring: `build_validation_report` compares EDGAR's resolved ratios against this
+    # cache to prove the tag mappings still reproduce an independent source, and that comparison needs
+    # a baseline that keeps breathing. It is a rolling ~1/refresh_days slice, hard-capped, so it costs
+    # a small fixed number of Yahoo requests rather than one per name.
     fundamentals_map = data.fetch_fundamentals(scored_tickers, db_path=db_path)
     # Earnings dates are now fetched ONCE for the universe, cached, and refreshed on a rolling slice —
     # they used to be an uncached network call inside the per-ticker scoring loop (one HTTP request per
@@ -254,17 +317,21 @@ def _run_live(watchlist, histories, latest_dates, db_path):
     # source swap: a dict lookup instead of a request.
     earnings_map = data.fetch_earnings_dates(scored_tickers, db_path=db_path)
 
+    # v0.6: fundamentals come from EDGAR, resolved AS OF run_date — the identical call the backfill
+    # makes. fundamentals_pit=1 on every live row from here on, which is what makes a live row and a
+    # backfilled row the same kind of object for the first time.
+    sector_by_ticker = {t: s for t, _b, s in included}
     run_scoring_for_date(
         run_date, included, histories, db_path, backfilled=False,
         get_earnings=lambda t: earnings_map.get(t, (None, True)),
-        get_fundamentals=lambda t: fundamentals_map.get(t) or {},
+        get_fundamentals=edgar_fundamentals_resolver(run_date, sector_by_ticker, db_path),
+        fundamentals_pit=True,
     )
-    # Report the run's own facts back to main() so it can journal them (they're in no CSV). The
-    # fundamentals_map + as-of date are handed back so missed-day recovery can reuse this single
-    # fetch (most-recent values) rather than re-fetching, stamping recovered rows fundamentals_as_of.
+    # Report the run's own facts back to main() so it can journal them (they're in no CSV).
+    # fundamentals_as_of is now run_date itself, not "whenever we happened to fetch": recovery
+    # resolves each missed day against its own date rather than stamping today's values onto it.
     return {"run_date": run_date, "tickers_scored": len(included), "skipped": skipped,
-            "fundamentals_map": fundamentals_map,
-            "fundamentals_as_of": date.today().isoformat()}
+            "fundamentals_as_of": run_date}
 
 
 def _run_backfill(watchlist, histories, db_path):
@@ -358,17 +425,13 @@ def _run_edgar_backfill(watchlist, histories, db_path, model_version=None):
             continue
         included = _included_for_date(watchlist, date_sets, run_date)
         if included:
-            # closes over run_date so every resolution is gated to this date and no other
-            def get_fund(ticker, feat, _d=run_date):
-                return edgar.get_fundamentals_as_of(
-                    ticker, _d, price=feat.get("latest_close"),
-                    sector=_normalize_sector(sector_by_ticker.get(ticker)), db_path=db_path,
-                    facts_index=facts_index)
-
-            run_scoring_for_date(run_date, included, histories, db_path,
-                                 backfilled=True, get_earnings=no_earnings,
-                                 get_fundamentals=get_fund,
-                                 model_version=model_version, fundamentals_pit=True)
+            run_scoring_for_date(
+                run_date, included, histories, db_path,
+                backfilled=True, get_earnings=no_earnings,
+                # The SAME resolver the live path uses, gated to this date and no other.
+                get_fundamentals=edgar_fundamentals_resolver(
+                    run_date, sector_by_ticker, db_path, facts_index=facts_index),
+                model_version=model_version, fundamentals_pit=True)
             last_scored = (run_date, len(included))
         if i % 25 == 0 or i == total:
             print(f"[app] EDGAR backfill progress: {i}/{total} dates done", flush=True)
@@ -391,16 +454,19 @@ def _missing_live_days(calendar, live_dates):
     return [d for d in calendar if first_live <= d <= target and d not in live]
 
 
-def _recover_missing_days(watchlist, histories, db_path, fundamentals_map, fundamentals_as_of):
+def _recover_missing_days(watchlist, histories, db_path):
     """Self-healing: reconstruct any LIVE trading day that was MISSED (machine off at run time). A
     missed day is any NYSE session (SPY calendar) within the live-tracking span [first live snapshot
     .. most recent completed session] that has no live snapshot of the current model_version —
     INCLUDING holes below the max live date (e.g. today ran but yesterday didn't). Each is rebuilt
     point-in-time from cached price history via the SAME machinery as backfill (run_scoring_for_date,
     strict no-lookahead on price/volume), but written as a LIVE row (backfilled=0) marked recovered=1.
-    Fundamentals can't be fetched as-of a past date, so the most-recent fundamentals are applied and
-    stamped fundamentals_as_of (flagged staleness, never silent; excluded from the fundamental-factor
-    IC downstream). SCORING ONLY — journaling happens centrally after evaluation so every entry sees
+    As of v0.6 fundamentals for a recovered day are resolved from EDGAR AS OF THAT DAY, exactly as
+    for a normal live day. Previously they could not be fetched retroactively, so the most-recent
+    yfinance values were stamped onto a past date and flagged stale — honest, but it meant a recovered
+    row was a third kind of row, agreeing with neither the live nor the backfilled model. It is now
+    genuinely point-in-time (fundamentals_pit=1), and `fundamentals_as_of` is the recovered date
+    itself. SCORING ONLY — journaling happens centrally after evaluation so every entry sees
     the full snapshot set. Returns [{run_date, tickers_scored}] for the days recovered (chronological)."""
     model_version = PARAMS["model_version"]
     calendar = storage.get_cached_dates("SPY", db_path=db_path)  # ascending NYSE session calendar
@@ -415,7 +481,7 @@ def _recover_missing_days(watchlist, histories, db_path, fundamentals_map, funda
 
     date_sets = {t: {r["date"] for r in h} for t, h in histories.items()}
     no_earnings = lambda _t: (None, True)  # historical days_until_earnings is not reconstructable
-    get_fund = lambda t: fundamentals_map.get(t) or {}
+    sector_by_ticker = dict(zip(watchlist["ticker"], watchlist["sector"]))
     print(f"[recover] {len(missing)} missed live trading day(s) to reconstruct: {missing}")
     recovered = []
     for d in missing:  # calendar is ascending -> chronological
@@ -423,12 +489,13 @@ def _recover_missing_days(watchlist, histories, db_path, fundamentals_map, funda
         if not included:
             print(f"[recover] {d}: no ticker has a real bar — skipping")
             continue
-        run_scoring_for_date(d, included, histories, db_path, backfilled=False,
-                             get_earnings=no_earnings, get_fundamentals=get_fund,
-                             recovered=True, fundamentals_as_of=fundamentals_as_of)
+        run_scoring_for_date(
+            d, included, histories, db_path, backfilled=False, get_earnings=no_earnings,
+            get_fundamentals=edgar_fundamentals_resolver(d, sector_by_ticker, db_path),
+            recovered=True, fundamentals_as_of=d, fundamentals_pit=True)
         recovered.append({"run_date": d, "tickers_scored": len(included)})
         print(f"[recover] reconstructed {d} as live+recovered ({len(included)} tickers, "
-              f"fundamentals as of {fundamentals_as_of})")
+              f"fundamentals resolved point-in-time as of {d})")
     return recovered
 
 
@@ -554,6 +621,11 @@ def main():
     parser.add_argument("--backfill-edgar", action="store_true",
                          help="v0.4 Phase 4: reconstruct point-in-time scores WITH EDGAR-derived "
                               "fundamentals under model_version=" + EDGAR_MODEL_VERSION)
+    parser.add_argument("--backfill-v06", action="store_true",
+                         help="v0.6: the same EDGAR point-in-time backfill under model_version="
+                              + LIVE_PIT_MODEL_VERSION + ". Needed because v0.6's live rows are "
+                              "produced by the identical code path, so the history must be rebuilt "
+                              "on the CURRENT (gap-repaired) price cache to be comparable to them")
     parser.add_argument("--research", choices=["decay", "walkforward", "quality", "shorthorizon", "backtest",
                                   "sizedecay", "patterns", "insider", "events", "sectortiming", "sectorlong", "all"],
                          help="run an opt-in RESEARCH analysis (report only — changes no score, "
@@ -662,7 +734,10 @@ def main():
         return
 
     recovered = []
-    if args.backfill_expanded:
+    if args.backfill_v06:
+        run_result = _run_edgar_backfill(watchlist, histories, db_path,
+                                         model_version=LIVE_PIT_MODEL_VERSION)
+    elif args.backfill_expanded:
         run_result = _run_edgar_backfill(watchlist, histories, db_path,
                                          model_version=EXPANDED_MODEL_VERSION)
     elif args.backfill_edgar:
@@ -671,14 +746,11 @@ def main():
         run_result = _run_backfill(watchlist, histories, db_path)
     else:
         run_result = _run_live(watchlist, histories, latest_dates, db_path)
-        # Self-healing: reconstruct any missed live trading days BEFORE evaluation, reusing this
-        # run's single fundamentals fetch, so today's scoreboard already reflects them.
+        # Self-healing: reconstruct any missed live trading days BEFORE evaluation, so today's
+        # scoreboard already reflects them. Each missed day resolves its OWN fundamentals as of
+        # itself, so nothing from this run's date is carried backwards onto it.
         if run_result:
-            recovered = _recover_missing_days(
-                watchlist, histories, db_path,
-                fundamentals_map=run_result.get("fundamentals_map") or {},
-                fundamentals_as_of=run_result.get("fundamentals_as_of"),
-            )
+            recovered = _recover_missing_days(watchlist, histories, db_path)
 
     _export_csvs(db_path, OUTPUT_DIR)
     # ONE forward-return evaluation pass per run: run_evaluation writes performance_review.csv AND hands

@@ -58,7 +58,11 @@ PARAMS = {
     # and the peer set tripled: a value_percentile of 80 under v0.5 means "top 20% of ~1,500", under
     # v0.3 it meant "top 20% of ~500". Every prior version stays frozen and untouched under its own
     # version string for side-by-side comparison; nothing is rewritten.
-    "model_version": "v0.5_expanded_universe",
+    # v0.6 (2026-09-16): the LIVE row is finally the SAME MODEL as the BACKFILLED row. Under v0.5
+    # one version string covered two different models — see LIVE_PIT_MODEL_VERSION below for the
+    # measured evidence. Nothing about the scoring formula changes; only where the live path gets
+    # its fundamentals. v0.5 stays frozen and untouched.
+    "model_version": "v0.6_live_pit_fundamentals",
 
     # Trend / moving averages
     "sma_windows": [20, 50, 200],
@@ -123,6 +127,13 @@ PARAMS = {
     # Warn (never crash) if more than this fraction of the scored universe is missing a given
     # fundamental field on a live run — signals a data-source problem worth knowing about.
     "fundamental_sparse_warn_pct": 0.40,
+
+    # How many still-maturing FROZEN versions to recompute per nightly run, oldest-first. A frozen
+    # version keeps gaining evaluable rows until its newest snapshot has matured at the longest
+    # horizon, so "frozen" cannot mean "never recomputed" without pinning its metrics (see the
+    # CORRECTION note in evaluation.run_evaluation). Recomputing them all costs ~8 min/run at current
+    # sizes; 1 per night bounds that to ~60s while rotating through them.
+    "eval_frozen_refresh_per_run": 1,
 
     # Regime-vigilance: trailing window (in distinct LIVE, non-backfilled run_dates) over which
     # a "recent" component IC is computed alongside full-history IC, to surface factor decay.
@@ -598,6 +609,10 @@ SCORE_WEIGHTS_BY_VERSION = {
     "v0.4_edgar_pit_fundamentals": SCORE_WEIGHTS,
     # v0.5 reuses v0.4's weights VERBATIM - only the universe changes. One variable at a time.
     "v0.5_expanded_universe": SCORE_WEIGHTS,
+    # v0.6 reuses v0.5's weights VERBATIM. The single variable that changes is that the LIVE path
+    # now resolves fundamentals the same way the backfill always did. Changing a weight here would
+    # confound the one thing this version exists to fix.
+    "v0.6_live_pit_fundamentals": SCORE_WEIGHTS,
 }
 
 # The v0.4 model version string, referenced by the EDGAR backfill path. Kept as a constant so the
@@ -611,6 +626,50 @@ EDGAR_MODEL_VERSION = "v0.4_edgar_pit_fundamentals"
 # rank is now against ~1500 peers, not ~500), which is precisely why this needs its own version
 # rather than overwriting v0.4.
 EXPANDED_MODEL_VERSION = "v0.5_expanded_universe"
+
+# v0.6 — THE LIVE ROW AND THE BACKFILLED ROW ARE NOW THE SAME MODEL.
+#
+# Up to v0.5 they were not, and one `model_version` string covered both. Measured 2026-09-16 on the
+# v0.5 rows, by direct query:
+#
+#                             live (27,396 rows)          backfilled (777,738 rows)
+#   fundamentals_pit          0 on every row              1 on every row
+#   fundamentals source       yfinance CURRENT snapshot   EDGAR, gated filed_date <= D
+#   short_interest_component  present on 26,744           NULL on all 777,738
+#   earnings penalty          applied to 289 rows         applied to 0
+#
+# So every historical number this project has produced — the decile spread, the backtest, the daily
+# log's "same model" caption — described a model that was NOT the one running nightly, and the only
+# genuinely out-of-sample rows (the live ones) were scored by a model that had never been validated.
+# The three differences all have the same root cause (the live path fetched its own fundamentals
+# instead of resolving them), so they are fixed together as ONE variable: live-vs-backfill
+# equivalence. They are NOT three separate changes.
+#
+# What v0.6 changes:
+#   1. live + recovered rows resolve fundamentals via edgar.get_fundamentals_as_of(as_of=run_date),
+#      which is what the backfill has always done -> fundamentals_pit=1 on EVERY v0.6 row;
+#   2. short_interest_component therefore has no source and sits out everywhere, exactly as it does
+#      on backfilled rows. It is NOT removed from SCORE_WEIGHTS: sitting out renormalizes the
+#      surviving weights, which is numerically identical to deleting it, and leaving it in place
+#      means a real FINRA short-interest history (free, bi-monthly, backfillable) can be switched
+#      on later without another weight change;
+#   3. the live-only earnings penalty is disabled — see LIVE_EARNINGS_PENALTY_VERSIONS.
+#
+# What v0.6 does NOT change: weights, sector-neutral ranking, the universe, any component formula.
+LIVE_PIT_MODEL_VERSION = "v0.6_live_pit_fundamentals"
+
+# Versions whose LIVE path applied the near-earnings penalty. The backfill NEVER applies it (a
+# historical earnings date is not reconstructable), so on every version listed here a live row near
+# earnings was scored on a different formula than its backfilled counterpart — 289 rows under v0.5.
+# v0.6 is deliberately absent: the penalty is a plausible risk control that has never been validated
+# against anything, and equivalence with the backtested model is worth more than an unmeasured
+# adjustment. `days_until_earnings` and `earnings_risk_unknown` are still COLLECTED and stored on
+# every v0.6 row, so the penalty can be measured later and switched back on if it earns its place.
+LIVE_EARNINGS_PENALTY_VERSIONS = {
+    "v0.2_fundamentals_added",
+    "v0.3_sector_neutral",
+    "v0.5_expanded_universe",
+}
 
 # Versions whose snapshots are COMPLETE and immutable — no new rows will ever be written to them, so
 # re-deriving their forward returns nightly can only ever reproduce the same numbers. They are skipped
@@ -634,6 +693,11 @@ SITOUT_COMPONENTS = {"value_component", "quality_component", "short_interest_com
 # Event-risk penalty applied only on live (non-backfilled) runs when
 # 0 <= days_until_earnings <= 5. Skipped entirely if earnings_risk_unknown.
 EARNINGS_PENALTIES = {"5d": 20, "20d": 12, "60d": 5, "120d": 0}
+
+# The same map zeroed, for a version that does not apply the penalty (see
+# LIVE_EARNINGS_PENALTY_VERSIONS). Passed explicitly rather than branching around the penalty so
+# both paths run identical code and only the numbers differ.
+NO_EARNINGS_PENALTIES = {k: 0 for k in EARNINGS_PENALTIES}
 
 # Score -> label bands. 80-100 strong / 65-79 decent / 50-64 watchlist / <50 weak.
 SCORE_LABEL_BANDS = {
@@ -966,6 +1030,30 @@ EDGAR_DEBT_TO_EQUITY_SCALE = 100.0
 # but both heavy on stock comp and acquisition amortization, exactly where the two definitions split.
 # Plausible, but unverified against a third source, so it does not enter a score. See ROADMAP.
 EDGAR_EXCLUDED_FIELDS = {"operating_margin"}
+
+# Fields the EDGAR resolver STRUCTURALLY cannot supply — each already documented at its definition in
+# edgar.py or in EDGAR_EXCLUDED_FIELDS above. Verified against the stored data on 2026-09-16: these are
+# NULL on 100% of all 1,055,667 EDGAR-sourced rows across v0.4 and v0.5, i.e. they have never once
+# resolved, which is the designed behaviour and not a fault.
+#
+# The live-run sparse-fundamentals warning skips them. Before v0.6 the live path fetched fundamentals
+# from yfinance, where a field missing for 100% of the universe genuinely meant a broken data source
+# and deserved a loud warning. From v0.6 the live path IS the EDGAR path, so those same seven fields
+# would print seven "check the data source" warnings every single night, forever, about a state nobody
+# can fix — and a warning that always fires is a warning that stops being read, which is how the next
+# REAL source failure gets missed.
+#
+# Two consequences worth stating plainly, because the composites are documented in terms of fields that
+# never arrive: value_percentile is the mean of THREE ratios (trailing_pe, price_to_sales,
+# price_to_book), not the four listed in FUNDAMENTAL_PERCENTILE_GROUPS; and quality_percentile is
+# profit_margin + return_on_equity + inverted debt_to_equity, with operating_margin never contributing.
+EDGAR_UNAVAILABLE_FIELDS = {
+    "forward_pe",                              # an estimate; never appears in a filing
+    "ev_to_ebitda",                            # not implemented — needs debt/cash/EBITDA tags
+    "operating_margin",                        # withheld by the gate; see EDGAR_EXCLUDED_FIELDS
+    "earnings_growth", "revenue_growth",       # YoY derivations, a future factor
+    "short_percent_of_float", "short_ratio",   # short interest is FINRA, not SEC filings
+}
 
 # GICS sectors whose filers (banks/insurers/REITs) don't report comparable COGS/margins — those concepts
 # sit out (missing, never faked) for a ticker flagged with this profile. v0.3 sector-neutral ranking

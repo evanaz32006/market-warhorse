@@ -58,3 +58,37 @@ Run and inspect output after each stage.
 The edge comes from richer DATA added later (estimate revisions, fundamentals, options, text-derived
 features), not from these price/volume stats. Design so a new signal = a new feature column + new weights
 in `config.py` + a bumped `model_version`. Never break the snapshot schema's backward comparability.
+
+## Corrections captured (wrong assumptions that cost real accuracy)
+
+**A `model_version` is a promise that every row under it came from the SAME model.** It was not kept.
+Up to v0.5 the live path fetched fundamentals from yfinance's *current* snapshot while the backfill
+resolved them point-in-time from EDGAR, and both wrote rows under one version string — so every
+historical metric described a model that was not the one running nightly, and the only genuinely
+out-of-sample rows were scored by a model nothing had validated. Fixed in v0.6 by routing every path
+through `app.edgar_fundamentals_resolver`. **When adding an input, ask which paths can supply it. If
+only one can, it does not go in the score** — it goes in a column, to be measured first.
+Guarded by `tests/test_live_backfill_parity.py`.
+
+**"Frozen" cannot mean "never recomputed".** A snapshot's forward return is not known until
+D+horizon has *elapsed in real price history*, so a version with no new snapshots still gains
+evaluable rows every night the calendar advances. Skipping it on name alone pins its metrics to
+whatever sample was ripe the day it was frozen. A version is skippable only once its newest snapshot
+has matured at the longest horizon; until then it is refreshed on a rolling schedule, and every
+report row carries `recomputed_on` so a stale number cannot pass as a fresh one.
+
+**Recomputing history is not optional after a price repair.** Features are trailing windows, so
+repairing missing interior bars changes every score computed over a window that spanned the hole —
+even when the close on the snapshot date is untouched. Measured: after the 2026-09 gap repair, 1,519
+of 1,525 names differed from their stored v0.5 backfill row while `latest_close` matched exactly.
+**A price-history repair invalidates every snapshot computed before it. Re-run the backfill.**
+
+**Two routes to the same answer can still differ in cost.** `edgar._facts_as_of` served its index
+route a tag-filtered slice and its SQL route everything — same result, 20,935 facts per ticker
+instead of 1,894. When one code path is a "fast version" of another, assert they return the same
+thing AND check they read the same amount.
+
+**Before trusting a guard, mutate the thing it guards and watch it fail.** A parity test here scored
+its live side under an invented `model_version`, so the setting it existed to protect was never
+exercised; it passed happily with the bug reintroduced. A test that has never failed has not been
+tested.

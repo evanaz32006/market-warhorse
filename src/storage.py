@@ -780,6 +780,21 @@ def get_score_map(model_version, run_date, column="score_20d", db_path=DEFAULT_D
         conn.close()
 
 
+def latest_snapshot_date(model_version, db_path=DEFAULT_DB_PATH):
+    """The most recent run_date holding a snapshot for this model_version, or None.
+
+    Used to decide whether a version is genuinely EXHAUSTED — whether its newest snapshot has
+    already matured at the longest horizon — rather than merely listed as frozen."""
+    conn = _connect(db_path)
+    try:
+        row = conn.execute(
+            "SELECT MAX(run_date) FROM feature_snapshots WHERE model_version = ?",
+            (model_version,)).fetchone()
+        return row[0] if row else None
+    finally:
+        conn.close()
+
+
 def list_model_versions(db_path=DEFAULT_DB_PATH):
     """Distinct model_version strings present in feature_snapshots, sorted ascending. Lets the
     evaluation build one side-by-side report across every version that has been run (e.g. v0.1
