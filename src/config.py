@@ -134,6 +134,14 @@ PARAMS = {
     # elsewhere because one observation carries its own 90-day trail (eps_7d_ago..eps_90d_ago).
     "estimates_refresh_days": 5,
 
+    # Macro / regime (src/macro.py). A macro reading older than this goes MISSING rather than being
+    # carried forward: a series that stopped publishing must not keep supplying a stale value as if
+    # it were current. 7 calendar days covers a holiday week without tolerating a dead series.
+    "macro_max_staleness_days": 7,
+    # Minimum observations before an EXPANDING percentile is allowed to define a regime. 252 ~ one
+    # trading year; below that a "high VIX" label is noise dressed as a regime.
+    "macro_min_regime_history": 252,
+
     # How many still-maturing FROZEN versions to recompute per nightly run, oldest-first. A frozen
     # version keeps gaining evaluable rows until its newest snapshot has matured at the longest
     # horizon, so "frozen" cannot mean "never recomputed" without pinning its metrics (see the
