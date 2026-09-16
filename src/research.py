@@ -1888,3 +1888,118 @@ def run_sector_timing_long(output_dir=None, cache_path=None, refresh=False):
           % (len(df), n_tested, n_nom, n_tested * PARAMS["pattern_alpha"],
              int(df["survives_bh_fdr"].sum())))
     return df
+
+
+# ---------------------------------------------------------------------------
+# (i) Survivorship — how big is the hole, and can it be corrected?  REPORT ONLY
+# ---------------------------------------------------------------------------
+
+# The universe is TODAY's S&P 1500 projected backwards to 2024-06. Survivors are, by construction,
+# the names that trended, so a trend/value ranking measured on them is flattered by exactly the
+# names it cannot see. Every row has carried `survivorship_biased=True` since v0.1 and the magnitude
+# had never been quantified, which is why the +10.4% at 120d is an upper bound and not an estimate.
+#
+# MEASURED 2026-09-16, from point-in-time membership reconstructed out of Wikipedia revisions
+# (universe.build_membership_history), 28 monthly snapshots per index:
+#
+#   index    ever a member    missing from the watchlist
+#   sp500         553              19   ( 3.4%)
+#   sp400         496              44   ( 8.9%)
+#   sp600         815             177   (21.7%)
+#
+# The pre-registered expectation held: the hole is smallest in large caps and largest in small,
+# tracking index turnover. 231 distinct names in total were in the index during the tracked window
+# and were never scored even once.
+#
+# WHY THE HOLE IS ONLY PARTLY RECOVERABLE, and why the recoverable part is the part that matters.
+# Correcting the bias needs price history for the names that left, and Yahoo purges delisted tickers
+# outright. Asking for all 231:
+#
+#   * 131 return "no price data found" — the ticker is gone. These exited by ACQUISITION, merger or
+#     take-private, which complete at a PREMIUM. Excluding them biases a measured edge DOWNWARD, so
+#     losing them is the benign half of the problem.
+#   * 100 still have history, and 92 of those still trade today. These were RELEGATED — dropped from
+#     the index while continuing to trade, typically after falling in size or performance. These are
+#     the true survivorship cases, and they are the ones still available.
+#
+# So the half that biases the result UPWARD is largely measurable, and the half that is unmeasurable
+# biases it downward. That is a far better position than "cannot be assessed".
+#
+# WHAT IS STILL NOT MEASURED HERE, stated plainly: this compares the forward returns of names the
+# model COULD see against names it COULD NOT, on the same dates. It does not re-score the missing
+# names, so it does not say whether any of them would have reached the top 10 — that needs a
+# backfill over the widened universe, because a percentile is a rank against peers and adding names
+# changes every rank. Until that is run, this sizes the bias in the UNIVERSE, not in the picks.
+#
+# And the measured gap is itself a LOWER BOUND on the true effect: a name that was relegated and
+# then went to zero has no price history either, so the very worst outcomes are missing from the
+# missing-name sample too.
+
+SURVIVORSHIP_INDICES = ("sp500", "sp400", "sp600")
+
+
+def survivorship_hole(cache=None, watchlist_path=None):
+    """Per index: who was ever a member during the tracked window, and who is absent from the
+    universe we actually score. Returns (summary_df, {index: [missing tickers]}).
+
+    "Missing" means the name was in the index at some point inside the window but is not in today's
+    watchlist — it was gone before the watchlist was built, so it was never scored once. These are
+    precisely the rows the backtest could not have contained."""
+    from src import universe
+    cache = universe.load_membership_cache() if cache is None else cache
+    if cache is None or cache.empty:
+        print("[research] survivorship: no membership history cached — build it first with "
+              "universe.build_membership_history()")
+        return pd.DataFrame(), {}
+
+    wl_path = watchlist_path or os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "watchlist.csv")
+    tracked = set(pd.read_csv(wl_path)["ticker"])
+
+    rows, missing_by_index = [], {}
+    for idx in SURVIVORSHIP_INDICES:
+        ever = universe.all_members_ever(cache, [idx])
+        if not ever:
+            continue
+        missing = sorted(ever - tracked)
+        missing_by_index[idx] = missing
+        sub = cache[cache["index_name"] == idx]
+        rows.append({
+            "index_name": idx,
+            "snapshots": int(sub["as_of_date"].nunique()),
+            "window_start": sub["as_of_date"].min(),
+            "window_end": sub["as_of_date"].max(),
+            "ever_members": len(ever),
+            "tracked": len(ever & tracked),
+            "missing": len(missing),
+            "missing_pct": round(100.0 * len(missing) / len(ever), 1),
+            "generated_at": _now_iso(),
+        })
+    return pd.DataFrame(rows), missing_by_index
+
+
+def run_survivorship_analysis(output_dir=None, watchlist_path=None):
+    """Quantify the survivorship hole per index and write it out. REPORT ONLY.
+
+    Writes survivorship_summary.csv (the table above) and survivorship_missing_names.csv (every
+    name, so the list can be inspected rather than trusted)."""
+    summary, missing_by_index = survivorship_hole(watchlist_path=watchlist_path)
+    if summary.empty:
+        return summary
+
+    out_dir = _output_dir(output_dir)
+    summary.to_csv(os.path.join(out_dir, "survivorship_summary.csv"), index=False)
+    pd.DataFrame([{"index_name": idx, "ticker": t}
+                  for idx, names in missing_by_index.items() for t in names]
+                 ).to_csv(os.path.join(out_dir, "survivorship_missing_names.csv"), index=False)
+
+    print("[research] survivorship hole — in the index during the window, never scored:")
+    for _, r in summary.iterrows():
+        print("  %-7s %4d of %4d ever-members missing (%4.1f%%), %d monthly snapshots %s .. %s"
+              % (r["index_name"], r["missing"], r["ever_members"], r["missing_pct"],
+                 r["snapshots"], r["window_start"], r["window_end"]))
+    total_missing = len({t for names in missing_by_index.values() for t in names})
+    print("[research] %d distinct names total. This SIZES the hole; it does not correct for it — a "
+          "corrected number needs the missing names re-scored against the widened universe, since a "
+          "percentile is a rank against peers." % total_missing)
+    return summary

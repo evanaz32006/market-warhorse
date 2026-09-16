@@ -169,3 +169,36 @@ def test_all_members_ever_is_the_union_across_snapshots():
     ])
     assert universe.all_members_ever(cache) == {"SURVIVOR", "DELISTED", "NEWCOMER"}
     assert universe.all_members_ever(cache, ["sp600"]) == set()
+
+
+# ---------------------------------------------------------------------------
+# The survivorship summary built on top of membership
+# ---------------------------------------------------------------------------
+
+def test_survivorship_hole_counts_only_names_absent_from_the_watchlist(tmp_path):
+    """The hole is names that were in the index during the window and are NOT in the universe we
+    score — those were never scored once, so no backtest could have contained them."""
+    from src import research
+    cache = _cache([
+        _row("sp500", "2024-06-01", "KEPT"), _row("sp500", "2024-06-01", "DROPPED"),
+        _row("sp500", "2025-06-01", "KEPT"), _row("sp500", "2025-06-01", "ADDED"),
+    ])
+    wl = tmp_path / "watchlist.csv"
+    pd.DataFrame({"ticker": ["KEPT", "ADDED", "UNRELATED"]}).to_csv(wl, index=False)
+
+    summary, missing = research.survivorship_hole(cache=cache, watchlist_path=str(wl))
+    row = summary[summary["index_name"] == "sp500"].iloc[0]
+    assert row["ever_members"] == 3 and row["tracked"] == 2 and row["missing"] == 1
+    assert missing["sp500"] == ["DROPPED"]
+    assert row["missing_pct"] == pytest.approx(33.3, abs=0.1)
+    assert row["snapshots"] == 2
+
+
+def test_survivorship_hole_on_an_empty_cache_reports_nothing_rather_than_zero(tmp_path):
+    """No membership history means the question is UNANSWERED, which is different from answering
+    'no bias'. The mutation this kills: returning a zero-hole summary when the cache is missing."""
+    from src import research
+    wl = tmp_path / "watchlist.csv"
+    pd.DataFrame({"ticker": ["A"]}).to_csv(wl, index=False)
+    summary, missing = research.survivorship_hole(cache=_cache([]), watchlist_path=str(wl))
+    assert summary.empty and missing == {}

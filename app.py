@@ -639,7 +639,8 @@ def main():
                               "produced by the identical code path, so the history must be rebuilt "
                               "on the CURRENT (gap-repaired) price cache to be comparable to them")
     parser.add_argument("--research", choices=["decay", "walkforward", "quality", "shorthorizon", "backtest",
-                                  "sizedecay", "patterns", "insider", "events", "sectortiming", "sectorlong", "all"],
+                                  "sizedecay", "patterns", "insider", "events", "sectortiming", "sectorlong",
+                                  "survivorship", "all"],
                          help="run an opt-in RESEARCH analysis (report only — changes no score, "
                               "weight or model_version) and exit, never on the nightly path")
     parser.add_argument("--backup", nargs="?", const="", metavar="DEST_DIR",
@@ -712,6 +713,10 @@ def main():
             research.run_event_research(db_path=db_path, model_version=version)
         if args.research in ("insider", "all"):
             research.run_insider_research(db_path=db_path, model_version=version)
+        if args.research in ("survivorship", "all"):
+            # Takes no model_version: it compares the WATCHLIST against reconstructed index
+            # membership, so it describes the universe every version shares, not any one model.
+            research.run_survivorship_analysis()
         if args.research in ("patterns", "all"):
             # Deliberately takes no model_version: the pattern harness reads PRICE HISTORY only,
             # never `feature_snapshots`, so it is unaffected by which model is live and its
