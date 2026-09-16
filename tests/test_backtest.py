@@ -213,3 +213,74 @@ def test_rebalance_schedule_skips_dates_with_no_scored_cross_section():
     sched = backtest.rebalance_schedule(cal, scored, hold_days=10)
     assert sched[0] == cal[10]
     assert all(d in scored for d in sched)
+
+
+# ---------------------------------------------------------------------------
+# The cash-period distortion (found 2026-09-16)
+# ---------------------------------------------------------------------------
+
+def test_first_invested_index_finds_where_the_curve_starts_moving():
+    """score_120d needs ~252 sessions of trailing history and fetch_period=2y, so the strategy held
+    NOTHING for the first 200-240 of the backtest's 559 sessions while the benchmark compounded."""
+    import numpy as np
+    from src import backtest
+    flat_then_moving = np.array([100.0, 100.0, 100.0, 101.0, 102.0])
+    assert backtest.first_invested_index(flat_then_moving) == 3
+    assert backtest.first_invested_index(np.array([100.0, 101.0])) == 1   # invested immediately
+    assert backtest.first_invested_index(np.array([100.0] * 5)) == 5      # never invested
+    assert backtest.first_invested_index(np.array([100.0])) == 0
+
+
+def test_cash_sessions_inflate_sharpe_and_hide_the_benchmarks_drawdown():
+    """THE BUG THIS ENCODES. A part-time strategy compared against a full-time benchmark over the
+    same calendar is flattered twice: its flat sessions are zero-variance and deflate the Sharpe
+    denominator, and it is credited for sitting out a drawdown it was never exposed to.
+
+    Measured on the real v0.5 sweep: as reported, 9 of 9 configs beat SPY on max drawdown and 7 of 9
+    on Sharpe; over the invested period only, 4 of 9 and 2 of 9. SPY's -18.8% max drawdown happened
+    almost entirely while the strategy held cash (-8.9% once it was actually in).
+
+    The mutation this kills: reporting only full-window metrics for a curve with a cash period."""
+    import numpy as np
+    from src import backtest
+
+    # The invested stretch OSCILLATES (near-zero mean, real volatility), which is what makes zero
+    # sessions dilute the pooled SD. A steadily-rising fixture would do the opposite: against a large
+    # positive mean, adding zeros INCREASES variance. The real curves behave the first way - measured
+    # 12.98% full-window vol against 17.15% invested-only - and a fixture that misses this would
+    # assert something false about the mechanism.
+    osc = [100.0]
+    for i in range(20):
+        osc.append(osc[-1] * (1.03 if i % 2 == 0 else 1 / 1.03))
+    # benchmark falls hard early, then follows the same oscillation
+    bench = np.array([100.0, 80.0] + [0.8 * v for v in osc])
+    # strategy is flat (in cash) through the crash, then follows it
+    strat = np.array([100.0, 100.0] + list(osc))
+
+    fi = backtest.first_invested_index(strat)
+    assert fi == 3, "the cash period must be located before anything is compared"
+
+    full_s, full_b = backtest.equity_metrics(strat), backtest.equity_metrics(bench)
+    inv_s, inv_b = backtest.equity_metrics(strat[fi:]), backtest.equity_metrics(bench[fi:])
+
+    # Full window: the strategy looks far safer purely because it was absent for the crash.
+    assert full_s["max_drawdown_pct"] > full_b["max_drawdown_pct"], (
+        "fixture is wrong: the full-window comparison should favour the strategy")
+    # Invested window: that advantage is gone, because neither was exposed to the crash.
+    assert inv_s["max_drawdown_pct"] == pytest.approx(inv_b["max_drawdown_pct"], abs=1e-9), (
+        "the drawdown edge should vanish once both sides are cut to the same sessions")
+    # And the flat sessions really do depress measured volatility.
+    assert full_s["volatility_annual"] < inv_s["volatility_annual"], (
+        "zero-variance cash sessions must be shown to deflate the Sharpe denominator")
+
+
+def test_invested_independent_periods_is_the_honest_sample_size():
+    """559 SESSIONS reads like 2.2 years of evidence. At a 120-day horizon the invested window is
+    about 2.7 non-overlapping holding periods, and that is what the result actually rests on."""
+    import numpy as np
+    from src import backtest
+    strat = np.array([100.0] * 240 + [100.0 + i for i in range(1, 320)])
+    fi = backtest.first_invested_index(strat)
+    invested = backtest.equity_metrics(strat[fi:])["n_sessions"]
+    assert round(invested / 120.0, 1) < 3.0, (
+        "a 120-day result over this window rests on fewer than three independent periods")

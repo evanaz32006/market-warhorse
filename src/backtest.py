@@ -94,6 +94,36 @@ def one_way_cost_bps(trade_dollars, adv_dollars):
 # Metrics
 # ---------------------------------------------------------------------------
 
+def first_invested_index(equity, tol=1e-9):
+    """Index of the first session on which the curve actually moves, i.e. holds a position.
+
+    THE CASH-PERIOD PROBLEM this exists to expose (found 2026-09-16). score_120d cannot be computed
+    until a name has ~252 sessions of trailing history, and `fetch_period=2y` means price history
+    starts 2024-06 — so no row carried a 120-day score before 2025-04-09, and the first REBALANCE
+    into real positions came later still. The backtest nonetheless began its equity curve at
+    2024-06-24 and reported statistics over all 559 sessions, of which the strategy spent 200-240
+    (36-43%) holding nothing at all.
+
+    Those flat sessions are not neutral. They contribute ZERO-VARIANCE returns, which deflate the
+    Sharpe denominator, and they let the strategy sit out a benchmark drawdown it was never exposed
+    to. Measured across the nine configs: as reported, 9 of 9 had a shallower drawdown than SPY and
+    7 of 9 a higher Sharpe; over the INVESTED period only, 4 of 9 and 2 of 9. SPY's -18.8% max
+    drawdown happened almost entirely while the strategy held cash, against -8.9% once it was
+    actually in the market.
+
+    Both windows are now reported, because they answer different questions honestly:
+      * the full window says what a person starting in 2024-06 would have experienced, startup
+        artefact included;
+      * the invested window is the only one that describes THE MODEL, and it is the one whose
+        Sharpe and drawdown may be compared to a fully-invested benchmark.
+    """
+    eq = np.asarray(equity, dtype=np.float64)
+    if len(eq) < 2:
+        return 0
+    moved = np.flatnonzero(np.abs(np.diff(eq)) > tol)
+    return int(moved[0] + 1) if len(moved) else int(len(eq))
+
+
 def equity_metrics(equity, risk_free=None):
     """CAGR, annualized Sharpe, max drawdown and volatility from one equity curve."""
     risk_free = PARAMS["backtest_risk_free_rate"] if risk_free is None else risk_free
@@ -347,11 +377,37 @@ def run_portfolio_backtest(db_path=None, model_version=None, output_dir=None,
                     continue
                 bench_curve = buy_and_hold_curve(panel, bench, cd)
                 bm = equity_metrics(bench_curve)
+                # The apples-to-apples comparison. Both sides are cut to the sessions on which the
+                # strategy actually held something, because comparing a part-time strategy's risk
+                # against a full-time benchmark's over the same calendar credits the strategy for a
+                # drawdown it was in cash for. See first_invested_index.
+                fi = first_invested_index(ce)
+                inv = equity_metrics(ce[fi:]) if fi < len(ce) - 1 else {}
+                bm_inv = (equity_metrics(bench_curve[fi:])
+                          if fi < len(bench_curve) - 1 else {})
                 m.update({
                     "model_version": model_version, "score_column": score_col, "strategy": "long_only",
                     "benchmark": bench,
                     "benchmark_cagr": bm["cagr"], "benchmark_total_return": bm["total_return"],
                     "benchmark_sharpe": bm["sharpe"], "benchmark_max_drawdown_pct": bm["max_drawdown_pct"],
+                    # --- invested-period-only, the numbers that describe the MODEL ---
+                    "n_sessions_in_cash": fi,
+                    "pct_of_window_in_cash": round(100.0 * fi / len(ce), 1) if len(ce) else None,
+                    "first_invested_date": cd[fi] if fi < len(cd) else None,
+                    "invested_cagr": inv.get("cagr"),
+                    "invested_sharpe": inv.get("sharpe"),
+                    "invested_max_drawdown_pct": inv.get("max_drawdown_pct"),
+                    "invested_volatility_annual": inv.get("volatility_annual"),
+                    "invested_n_sessions": inv.get("n_sessions"),
+                    "benchmark_invested_cagr": bm_inv.get("cagr"),
+                    "benchmark_invested_sharpe": bm_inv.get("sharpe"),
+                    "benchmark_invested_max_drawdown_pct": bm_inv.get("max_drawdown_pct"),
+                    # How many genuinely independent holding periods the row rests on. 559 SESSIONS
+                    # reads like 2.2 years of evidence; at a 120-day horizon the invested window is
+                    # about 2.7 non-overlapping periods, and that is the honest sample size.
+                    "invested_independent_periods": (
+                        round(inv["n_sessions"] / float(hold), 1)
+                        if inv.get("n_sessions") else None),
                     "excess_total_return_vs_benchmark": (
                         (m["total_return"] - bm["total_return"])
                         if (m["total_return"] is not None and bm["total_return"] is not None) else None),
@@ -366,9 +422,23 @@ def run_portfolio_backtest(db_path=None, model_version=None, output_dir=None,
                 if charge:
                     curves[f"long_n{n}_h{hold}"] = (cd, ce)
                     curves.setdefault("benchmark_" + bench, (cd, bench_curve))
+                # Print the INVESTED figures next to the full-window ones. The full-window Sharpe
+                # and drawdown flatter the strategy in proportion to how long it sat in cash, so
+                # showing only those is how "40% less drawdown than SPY" got believed.
+                _f = lambda v, sfx="": "n/a" if v is None else ("%.2f%s" % (v, sfx))
                 print(f"[backtest] long n={n:<3d} hold={hold:<4d} costs={str(charge):<5s} "
-                      f"CAGR={m['cagr']:+.1%} Sharpe={m['sharpe'] if m['sharpe'] is None else round(m['sharpe'],2)} "
+                      f"CAGR={m['cagr']:+.1%} Sharpe={_f(m['sharpe'])} "
                       f"maxDD={m['max_drawdown_pct']:.1f}% turn={m['turnover_annual']:.1f}x", flush=True)
+                if m.get("n_sessions_in_cash"):
+                    print(f"[backtest]   ^ {m['n_sessions_in_cash']} of {m['n_sessions']} sessions "
+                          f"({m['pct_of_window_in_cash']}%) held CASH (no score yet). Invested-only: "
+                          f"CAGR={0 if m['invested_cagr'] is None else m['invested_cagr']:+.1%} "
+                          f"Sharpe={_f(m['invested_sharpe'])} "
+                          f"maxDD={_f(m['invested_max_drawdown_pct'], '%')} vs benchmark "
+                          f"Sharpe={_f(m['benchmark_invested_sharpe'])} "
+                          f"maxDD={_f(m['benchmark_invested_max_drawdown_pct'], '%')}; "
+                          f"~{m['invested_independent_periods']} independent holding periods",
+                          flush=True)
 
             # long-short: top decile long vs bottom decile short, reported for comparison only
             ls_long, _, ce_l, _ = run_single_backtest(
