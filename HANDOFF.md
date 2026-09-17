@@ -1,5 +1,6 @@
 # HANDOFF — market-warhorse
-**Written 2026-09-16. Updated 2026-09-16 (later the same day) with the results of items 1-3.**
+**Written 2026-09-16. Updated 2026-09-16 with the results of items 1-3, and 2026-09-17 with a
+correction to the headline result (see Ground Truth) and a fourth structural problem.**
 
 > ## STATUS UPDATE — items 1, 2 and 3 are done or in flight. Read this box before the plan below.
 >
@@ -52,8 +53,12 @@
 >   have been.** Both deliberate and documented, but it means `value_percentile` is the mean of
 >   THREE ratios, not the four config advertises, and quality has never included operating margin.
 >
-> **Still true and still unaddressed:** the 14.1 GB DB has never been backed up, and with 25 GB free
-> on C: a local copy will not fit. Task Scheduler still kills the run on battery.
+> **Still unaddressed: the DB has never been backed up.** The earlier claim here that "a local copy
+> will not fit" is WRONG and was blocking the fix — as of 2026-09-17 C: has **54 GB free against a
+> 13.6 GB database**, so `VACUUM INTO` fits with ~40 GB to spare. `src/backup.py` is built and
+> verified. External media is still the goal (the drive itself is the single point of failure, and
+> `fetch_period=2y` means the oldest bars cannot be re-fetched), but a same-drive copy is strictly
+> better than none. Task Scheduler still kills the run on battery.
 
 
 **Read this first, then CLAUDE.md, then SESSION_STATE.md. This file is the mission brief; the
@@ -70,8 +75,8 @@ five immutable model versions. What it has **not** done is find a tradeable edge
 The previous assistant concluded the search space was "exhausted." **That conclusion was wrong and
 the owner correctly rejected it.** Seven experiments were run, but across only **TWO data sources**:
 price/volume, and SEC filings. The entire universe of alternative data is untouched. Your job is to
-find signal in the sources nobody has looked at yet, and to fix the three structural problems that
-would make any signal you find untrustworthy.
+find signal in the sources nobody has looked at yet, and to fix the structural problems that would
+make any signal you find untrustworthy. There are four; two are now fixed.
 
 Do not re-litigate whether the project is worth doing. It is. Build.
 
@@ -79,11 +84,40 @@ Do not re-litigate whether the project is worth doing. It is. Build.
 
 ## Ground truth: what is actually known
 
-**The one positive result.** At a ~120-trading-day horizon, the top 10 names by `score_120d` beat
-the average stock by +10.4% and beat SPY in 4 of 9 cost-charged backtest configurations, with
-Sharpe 1.28–1.38 vs SPY's 1.06 and max drawdown −11.6% vs −18.8%. **8 of 9 configs beat SPY on
-risk-adjusted return.** The demonstrated result is "index-like returns with ~40% less drawdown,"
-not "beats the market."
+**The one positive result — RESTATED 2026-09-17, because the original version of this paragraph was
+wrong.** It previously read: "Sharpe 1.28–1.38 vs SPY's 1.06, max drawdown −11.6% vs −18.8%, 8 of 9
+configs beat SPY on risk-adjusted return — index-like returns with ~40% less drawdown." **Do not
+quote those numbers. They are an artefact of a cash period.**
+
+`score_120d` cannot exist until a name has ~252 sessions of trailing history, and `fetch_period=2y`
+means price history starts 2024-06 — so no row carried a 120-day score before **2025-04-09**, and the
+first rebalance into real positions came later still. The backtest nonetheless began its equity curve
+at 2024-06-24 and computed every statistic over all 559 sessions, of which the strategy held
+**nothing at all for 200–240 (36–43%)**. Those flat sessions are zero-variance, which dilutes the
+pooled SD and deflates the Sharpe denominator, and they let the strategy sit out a benchmark drawdown
+it was never exposed to. Recomputing both sides over only the sessions the strategy actually held
+something:
+
+| | as reported | invested-only |
+|---|---|---|
+| configs with shallower max drawdown than SPY | 9 of 9 | **4 of 9** |
+| configs with higher Sharpe than SPY | 7 of 9 | **2 of 9** |
+
+SPY's −18.8% max drawdown happened almost entirely while the strategy was in cash; over the invested
+window SPY drew −8.9% against the strategy's −11.6%. **The drawdown edge is reversed, and so is the
+volatility edge** (12.98% full-window vs 17.15% invested-only).
+
+**What survives is a RETURN edge, not a risk edge:** 33.3% vs SPY's 21.6% annualized for n10/h120
+over the invested window, Sharpe 1.77 vs 1.67. Real, but far smaller than 1.32 vs 1.06 implied, and
+it rests on **~2.7 non-overlapping 120-day holding periods** — `n_sessions: 559` reads like 2.2 years
+of evidence and is not. Every sweep row now carries `invested_*` columns and
+`invested_independent_periods` alongside the full-window figures; `backtest.first_invested_index`
+carries the full explanation and `tests/test_backtest.py` pins the mechanism.
+
+**The lesson, which matters more than the number:** this project applied `effective_independent_n`,
+minimum detectable effect and overlap-adjusted t-statistics rigorously to **every single null**, and
+never once to its only positive result. Scrutinise the results you like on the same terms as the ones
+you don't.
 
 **The seven nulls** (all pre-registered, all correctly measured — do not redo these):
 seasonality/day-of-week, SEC Form 4 insider transactions, 8-K item codes, SUE/post-earnings drift,
@@ -97,9 +131,14 @@ inputs, not better weights.
 
 ---
 
-## THREE STRUCTURAL PROBLEMS — fix these before trusting any new result
+## THE STRUCTURAL PROBLEMS
 
-### 1. The live model is not the backtested model. THIS IS THE WORST ONE.
+**Items 1-3 below are the ORIGINAL 2026-09-16 diagnosis, kept verbatim because the reasoning is
+still the right reasoning. Items 1 and 2 are now RESOLVED and item 3 is not — see the status box at
+the top of this file for what was actually found, which in item 2's case CONTRADICTS the prediction
+made here. Item 4 was found on 2026-09-17 and is new.**
+
+### 1. The live model is not the backtested model. — RESOLVED in v0.6 (see status box)
 
 Verified 2026-09-16 by direct query:
 
@@ -121,7 +160,7 @@ does not).
 or source a backfillable history (FINRA publishes free bi-monthly). Then re-run everything. This is
 a new `model_version` under CLAUDE.md #5.
 
-### 2. Survivorship bias has never been measured, and may be the entire edge.
+### 2. Survivorship bias has never been measured. — MEASURED; it cuts the OTHER way (see status box)
 
 The universe is **today's** S&P 1500 projected backwards to 2024-06. A trend/value strategy on
 survivors-only inflates exactly this way — survivors are the names that trended. Every output row
@@ -136,7 +175,7 @@ layout changed; retry with a more tolerant parser, or use a public constituent-h
 Re-run the 120d test on the true as-of universe. **Until this is done the +10.4% is an upper bound,
 not an estimate.** Everything else should wait on this.
 
-### 3. No project-level holdout.
+### 3. No project-level holdout. — STILL OPEN, and now the most important one left
 
 The 120-day horizon, the display choice, the weight review — all chosen while looking at the full
 2.2 years. Multiple comparisons are corrected *within* each family (BH-FDR, circular-shift nulls),
@@ -147,6 +186,21 @@ wrong model per problem #1.
 **Fix:** freeze a holdout period now and never look at it until a candidate is final.
 
 ---
+
+### 4. The only positive result was never held to the project's own standard. (found 2026-09-17)
+
+Every null in this project was reported with an effective independent sample size, a minimum
+detectable effect and an overlap-adjusted t-statistic. The one POSITIVE result was reported with
+none of them, over a 559-session window in which the strategy held nothing for 200-240 sessions,
+against a fully-invested benchmark. Correcting just that one comparison took it from "9 of 9 configs
+beat SPY on drawdown" to "4 of 9", and from "7 of 9 on Sharpe" to "2 of 9". See the restated Ground
+Truth section above.
+
+**The fix is a habit, not a patch.** Before quoting any favourable number, ask the three questions
+already asked of every null: over what window, against what baseline measured over the SAME window,
+and on how many INDEPENDENT observations. The backtest now emits `invested_*` columns and
+`invested_independent_periods` so the third question cannot be skipped, but nothing stops the next
+favourable result from being quoted the same careless way.
 
 ## THE ACTUAL OPPORTUNITY: sources nobody has touched
 
