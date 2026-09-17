@@ -4,6 +4,12 @@
 # fetch_period is 2y, so price bars older than ~2 years can no longer be refetched.
 data/
 
+# backups/ is PARAMS["backup_dir"], the DEFAULT destination of `python app.py --backup`, so the
+# tool's own output lands here unless a path is given. A backup is a copy of the 13 GB database and
+# is exactly as unwelcome in git as the original. Committed once by accident on 2026-09-17 via
+# `git add -A`, which wedged every push until the blob was stripped.
+backups/
+
 # --- Virtualenv / caches ------------------------------------------------------
 .venv/
 __pycache__/

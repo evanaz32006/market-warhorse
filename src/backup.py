@@ -90,6 +90,14 @@ def backup_database(dest_dir, db_path=None, verify=True):
                           % (free_bytes / 1e9, source_bytes / 1e9))
 
     started = time.time()
+    # Counts BEFORE the copy as well as after. VACUUM INTO snapshots the source at the moment its
+    # read transaction opens, so verifying against the source AFTERWARDS compares the copy to a
+    # database that may have moved on. Without a "before" reading the two failure modes are
+    # indistinguishable: a genuinely incomplete copy, and a perfectly good copy of a source that
+    # was being written to. Learned the hard way on 2026-09-17 - a 13.9 GB backup taken while the
+    # v0.6 backfill was running was rejected because feature_snapshots had grown 103,225 rows
+    # during the 700s copy, while every static table matched to the row.
+    counts_before = _table_counts(db_path) if verify else None
     print("[backup] %s (%.1f GB) -> %s" % (db_path, source_bytes / 1e9, target))
     conn = sqlite3.connect(db_path, timeout=120)
     try:
@@ -122,18 +130,44 @@ def backup_database(dest_dir, db_path=None, verify=True):
         source_counts = _table_counts(db_path)
         backup_counts = _table_counts(target)
         summary["source_counts"] = source_counts
+        summary["source_counts_before"] = counts_before
         summary["backup_counts"] = backup_counts
-        mismatches = {t: (source_counts[t], backup_counts[t])
-                      for t in source_counts if source_counts[t] != backup_counts[t]}
-        summary["counts_match"] = not mismatches
-        summary["verified"] = (integrity == "ok") and not mismatches
+
+        # A table the WRITER touched during the copy cannot be verified by this method at all: the
+        # copy is a snapshot of one instant and the source is a different instant. Separated from a
+        # real mismatch so the operator is told which problem they have.
+        moved = {t: (counts_before[t], source_counts[t])
+                 for t in source_counts if counts_before[t] != source_counts[t]}
+        mismatches, inconclusive = {}, {}
+        for t in source_counts:
+            if source_counts[t] == backup_counts[t]:
+                continue
+            lo, hi = sorted((counts_before[t], source_counts[t]))
+            if t in moved and lo <= backup_counts[t] <= hi:
+                inconclusive[t] = (counts_before[t], backup_counts[t], source_counts[t])
+            else:
+                mismatches[t] = (source_counts[t], backup_counts[t])
+        summary["counts_match"] = not mismatches and not inconclusive
+        summary["source_moved_during_copy"] = moved
+        summary["inconclusive_tables"] = inconclusive
+        summary["verified"] = (integrity == "ok") and not mismatches and not inconclusive
         for t in VERIFY_TABLES:
+            state = ("OK" if source_counts[t] == backup_counts[t]
+                     else "INCONCLUSIVE (source was being written)" if t in inconclusive
+                     else "MISMATCH")
             print("[backup]   %-20s source %-12s backup %-12s %s"
-                  % (t, source_counts[t], backup_counts[t],
-                     "OK" if source_counts[t] == backup_counts[t] else "MISMATCH"))
-        if not summary["verified"]:
+                  % (t, source_counts[t], backup_counts[t], state))
+        if mismatches:
             raise RuntimeError(
                 "BACKUP FAILED VERIFICATION — integrity=%s mismatches=%s. The file at %s must not "
                 "be trusted." % (integrity, mismatches, target))
+        if inconclusive:
+            raise RuntimeError(
+                "BACKUP NOT VERIFIED — the SOURCE changed while the copy ran, so this check cannot "
+                "prove anything about %s. Every other table matched exactly and integrity=%s, so "
+                "the file is probably a good snapshot of an earlier instant, but it has NOT been "
+                "verified and must not be relied on as one. Re-run with no writer active "
+                "(no backfill, no nightly run). Tables that moved: %s. File: %s"
+                % (sorted(inconclusive), integrity, moved, target))
         print("[backup] verified: integrity ok, all row counts match")
     return summary
